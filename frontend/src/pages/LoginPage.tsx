@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Zap, Mail, Lock, ArrowRight } from 'lucide-react';
 import { authApi } from '@/api/auth';
 import { useAuthStore } from '@/stores/authStore';
+import { useToast } from '@/components/ui/ToastProvider';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 
@@ -14,6 +15,17 @@ export default function LoginPage() {
   const [loading, setLoading]   = useState(false);
   const login    = useAuthStore((s) => s.login);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('error') === 'session_expired') {
+      toast('Your session has expired. Please log in again.', 'info');
+      // Clean up URL
+      navigate('/login', { replace: true });
+    }
+  }, [location, navigate, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

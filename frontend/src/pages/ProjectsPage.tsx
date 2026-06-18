@@ -1,249 +1,248 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, FolderOpen, Calendar, Layers, Pencil, Trash2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, FolderKanban, MoreVertical, Edit2, Trash2 } from 'lucide-react';
 import { projectsApi } from '@/api/projects';
-import type { Project, ProjectRequest, ProjectStatus } from '@/types';
+import { Project } from '@/types';
 import Button from '@/components/ui/Button';
+import Card from '@/components/ui/Card';
+import { ProjectStatusBadge } from '@/components/ui/Badge';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
-import Spinner from '@/components/ui/Spinner';
-import { ProjectStatusBadge } from '@/components/ui/Badge';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { useToast } from '@/components/ui/ToastProvider';
 
-// ─── Project Form ─────────────────────────────────────────────────────────────
-interface ProjectFormProps {
-  initial?: Partial<ProjectRequest>;
-  onSubmit: (data: ProjectRequest) => Promise<void>;
-  submitLabel: string;
-}
+export default function ProjectsPage() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
-function ProjectForm({ initial, onSubmit, submitLabel }: ProjectFormProps) {
-  const [name, setName]         = useState(initial?.name ?? '');
-  const [desc, setDesc]         = useState(initial?.description ?? '');
-  const [status, setStatus]     = useState<ProjectStatus>(initial?.status ?? 'ACTIVE');
-  const [startDate, setStart]   = useState(initial?.startDate ?? '');
-  const [endDate, setEnd]       = useState(initial?.endDate ?? '');
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState('');
+  // Modals
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editProject, setEditProject] = useState<Project | null>(null);
+  const [deleteProject, setDeleteProject] = useState<Project | null>(null);
 
-  const handle = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+  const fetchProjects = async (p = 0) => {
     try {
-      await onSubmit({ name, description: desc, status, startDate: startDate || null, endDate: endDate || null });
-    } catch (err: any) {
-      setError(err.response?.data?.message ?? 'Error saving project');
+      setIsLoading(true);
+      const res = await projectsApi.list(p, 12);
+      setProjects(res.data.data.content);
+      setTotalPages(res.data.data.totalPages);
+    } catch (error) {
+      toast('Failed to load projects', 'error');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProjects(page);
+  }, [page]);
+
+  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    try {
+      await projectsApi.create({
+        name: formData.get('name') as string,
+        description: formData.get('description') as string,
+        status: 'ACTIVE',
+        startDate: null,
+        endDate: null,
+      });
+      setIsCreateOpen(false);
+      toast('Project created successfully', 'success');
+      fetchProjects(0);
+    } catch (error) {
+      toast('Failed to create project', 'error');
+    }
+  };
+
+  const handleEdit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editProject) return;
+    const formData = new FormData(e.currentTarget);
+    try {
+      await projectsApi.update(editProject.id, {
+        name: formData.get('name') as string,
+        description: formData.get('description') as string,
+        status: editProject.status,
+        startDate: editProject.startDate,
+        endDate: editProject.endDate,
+      });
+      setEditProject(null);
+      toast('Project updated', 'success');
+      fetchProjects(page);
+    } catch (error) {
+      toast('Failed to update project', 'error');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteProject) return;
+    try {
+      await projectsApi.delete(deleteProject.id);
+      setDeleteProject(null);
+      toast('Project deleted', 'success');
+      fetchProjects(page);
+    } catch (error) {
+      toast('Failed to delete project', 'error');
     }
   };
 
   return (
-    <form onSubmit={handle} className="space-y-4">
-      {error && <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-sm text-red-400">{error}</div>}
-      <Input label="Project name" id="proj-name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="e.g. Website Redesign" />
-      <div className="space-y-1.5">
-        <label className="block text-sm font-medium text-text-muted">Description</label>
-        <textarea
-          className="w-full px-3.5 py-2.5 rounded-xl text-sm text-text bg-bg-surface2 border border-border focus:border-accent outline-none resize-none placeholder:text-text-dim"
-          rows={3}
-          value={desc}
-          onChange={(e) => setDesc(e.target.value)}
-          placeholder="What is this project about?"
-        />
-      </div>
-      <div className="space-y-1.5">
-        <label className="block text-sm font-medium text-text-muted">Status</label>
-        <select
-          className="w-full px-3.5 py-2.5 rounded-xl text-sm text-text bg-bg-surface2 border border-border focus:border-accent outline-none"
-          value={status}
-          onChange={(e) => setStatus(e.target.value as ProjectStatus)}
-        >
-          <option value="ACTIVE">Active</option>
-          <option value="ON_HOLD">On Hold</option>
-          <option value="COMPLETED">Completed</option>
-        </select>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <Input label="Start date" id="proj-start" type="date" value={startDate} onChange={(e) => setStart(e.target.value)} />
-        <Input label="End date"   id="proj-end"   type="date" value={endDate}   onChange={(e) => setEnd(e.target.value)} />
-      </div>
-      <Button type="submit" loading={loading} className="w-full">{submitLabel}</Button>
-    </form>
-  );
-}
-
-// ─── Project Card ─────────────────────────────────────────────────────────────
-const cardVariants = {
-  hidden: { opacity: 0, y: 16 },
-  visible: (i: number) => ({ opacity: 1, y: 0, transition: { delay: i * 0.07, duration: 0.35 } }),
-  exit:   { opacity: 0, scale: 0.95, transition: { duration: 0.2 } },
-};
-
-interface ProjectCardProps {
-  project: Project;
-  index: number;
-  onEdit: () => void;
-  onDelete: () => void;
-}
-
-function ProjectCard({ project, index, onEdit, onDelete }: ProjectCardProps) {
-  return (
-    <motion.div
-      layout
-      variants={cardVariants}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
-      custom={index}
-      whileHover={{ y: -3 }}
-      className="bg-bg-surface border border-border rounded-card p-5 shadow-card group"
-    >
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <Link
-          to={`/projects/${project.id}`}
-          className="font-semibold text-text hover:text-accent transition-colors line-clamp-2 leading-snug"
-        >
-          {project.name}
-        </Link>
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-          <button onClick={onEdit}   className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-bg-surface2 transition-colors">
-            <Pencil className="w-3.5 h-3.5" />
-          </button>
-          <button onClick={onDelete} className="p-1.5 rounded-lg text-text-muted hover:text-red-400 hover:bg-red-500/10 transition-colors">
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
-
-      {project.description && (
-        <p className="text-xs text-text-muted line-clamp-2 mb-3">{project.description}</p>
-      )}
-
-      <div className="flex items-center gap-3 flex-wrap">
-        <ProjectStatusBadge status={project.status} />
-        <span className="flex items-center gap-1 text-xs text-text-muted">
-          <Layers className="w-3 h-3" />{project.taskCount} task{project.taskCount !== 1 ? 's' : ''}
-        </span>
-        {project.endDate && (
-          <span className="flex items-center gap-1 text-xs text-text-muted">
-            <Calendar className="w-3 h-3" />{new Date(project.endDate).toLocaleDateString()}
-          </span>
-        )}
-      </div>
-    </motion.div>
-  );
-}
-
-// ─── Projects Page ────────────────────────────────────────────────────────────
-export default function ProjectsPage() {
-  const [projects, setProjects]   = useState<Project[]>([]);
-  const [total, setTotal]         = useState(0);
-  const [page, setPage]           = useState(0);
-  const [loading, setLoading]     = useState(true);
-  const [createOpen, setCreate]   = useState(false);
-  const [editProject, setEdit]    = useState<Project | null>(null);
-  const [deleteId, setDeleteId]   = useState<number | null>(null);
-  const PAGE_SIZE = 20;
-
-  const load = (p = 0) => {
-    setLoading(true);
-    projectsApi.list(p, PAGE_SIZE)
-      .then(({ data }) => {
-        setProjects(data.data.content);
-        setTotal(data.data.totalElements);
-        setPage(p);
-      })
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => { load(0); }, []);
-
-  const handleCreate = async (req: ProjectRequest) => {
-    const { data } = await projectsApi.create(req);
-    setProjects((prev) => [data.data, ...prev]);
-    setCreate(false);
-  };
-
-  const handleEdit = async (req: ProjectRequest) => {
-    if (!editProject) return;
-    const { data } = await projectsApi.update(editProject.id, req);
-    setProjects((prev) => prev.map((p) => (p.id === editProject.id ? data.data : p)));
-    setEdit(null);
-  };
-
-  const handleDelete = async () => {
-    if (deleteId === null) return;
-    await projectsApi.delete(deleteId);
-    setProjects((prev) => prev.filter((p) => p.id !== deleteId));
-    setDeleteId(null);
-  };
-
-  return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="max-w-7xl mx-auto">
+      <div className="flex justify-between items-center mb-8">
         <div>
-          <h2 className="font-display font-bold text-3xl text-text">Projects</h2>
-          <p className="text-text-muted text-sm mt-1">{total} project{total !== 1 ? 's' : ''} total</p>
+          <h1 className="text-3xl font-display font-bold text-text">Projects</h1>
+          <p className="text-text-muted mt-1">Manage all your active projects and boards</p>
         </div>
-        <Button onClick={() => setCreate(true)}>
-          <Plus className="w-4 h-4" />New Project
+        <Button onClick={() => setIsCreateOpen(true)}>
+          <Plus className="w-5 h-5 mr-2" />
+          New Project
         </Button>
       </div>
 
-      {/* Grid */}
-      {loading ? (
-        <div className="flex h-48 items-center justify-center"><Spinner size="lg" /></div>
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Card key={i} className="p-6 h-[200px] flex flex-col justify-between">
+              <div>
+                <Skeleton className="w-10 h-10 rounded-xl mb-4" />
+                <Skeleton variant="text" className="w-3/4 mb-2" />
+                <Skeleton variant="text" className="w-full h-10" />
+              </div>
+              <Skeleton variant="text" className="w-1/3" />
+            </Card>
+          ))}
+        </div>
       ) : projects.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          className="flex flex-col items-center justify-center py-24 text-center"
-        >
-          <FolderOpen className="w-16 h-16 text-text-dim mb-4" />
-          <h3 className="font-semibold text-xl text-text mb-2">No projects yet</h3>
-          <p className="text-text-muted mb-6">Create your first project to get started</p>
-          <Button onClick={() => setCreate(true)}><Plus className="w-4 h-4" />New Project</Button>
-        </motion.div>
+        <EmptyState
+          title="No projects found"
+          description="You haven't created any projects yet. Get started by creating your first project board."
+          action={<Button onClick={() => setIsCreateOpen(true)}>Create Project</Button>}
+        />
       ) : (
-        <AnimatePresence mode="popLayout">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {projects.map((project, i) => (
-              <ProjectCard
-                key={project.id}
-                project={project}
-                index={i}
-                onEdit={() => setEdit(project)}
-                onDelete={() => setDeleteId(project.id)}
-              />
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {projects.map((p) => (
+              <Card key={p.id} hover className="p-6 flex flex-col cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
+                <div className="flex justify-between items-start mb-4">
+                  <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent">
+                    <FolderKanban className="w-5 h-5" />
+                  </div>
+                  <div className="relative group" onClick={(e) => e.stopPropagation()}>
+                    <button className="p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-surface2 focus-visible:ring-2 focus-visible:ring-accent outline-none">
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+                    <div className="absolute right-0 top-full mt-1 bg-bg-surface border border-border rounded-lg shadow-card hidden group-hover:block z-10 min-w-[120px] overflow-hidden">
+                      <button
+                        onClick={() => setEditProject(p)}
+                        className="w-full text-left px-4 py-2 text-sm text-text hover:bg-bg-surface2 flex items-center focus-visible:bg-bg-surface2 outline-none"
+                      >
+                        <Edit2 className="w-4 h-4 mr-2" /> Edit
+                      </button>
+                      <button
+                        onClick={() => setDeleteProject(p)}
+                        className="w-full text-left px-4 py-2 text-sm text-status-critical hover:bg-status-critical/10 flex items-center focus-visible:bg-status-critical/10 outline-none"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" /> Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                <h3 className="font-semibold text-lg text-text mb-2 line-clamp-1">{p.name}</h3>
+                <p className="text-sm text-text-muted line-clamp-2 mb-6 flex-1">
+                  {p.description || 'No description provided.'}
+                </p>
+                
+                <div className="flex items-center justify-between pt-4 border-t border-border">
+                  <ProjectStatusBadge status="ACTIVE" />
+                  <span className="text-xs text-text-muted font-medium">Owner</span>
+                </div>
+              </Card>
             ))}
           </div>
-        </AnimatePresence>
+
+          {totalPages > 1 && (
+            <div className="mt-8 flex items-center justify-center gap-4">
+              <Button
+                variant="secondary"
+                disabled={page === 0}
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+              >
+                Previous
+              </Button>
+              <span className="text-sm text-text-muted">Page {page + 1} of {totalPages}</span>
+              <Button
+                variant="secondary"
+                disabled={page === totalPages - 1}
+                onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+              >
+                Next
+              </Button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Create Modal */}
-      <Modal isOpen={createOpen} onClose={() => setCreate(false)} title="New Project">
-        <ProjectForm onSubmit={handleCreate} submitLabel="Create Project" />
+      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Create New Project">
+        <form onSubmit={handleCreate} className="space-y-4">
+          <Input label="Project Name" name="name" required placeholder="e.g. Website Redesign" />
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-text">Description</label>
+            <textarea
+              name="description"
+              className="w-full bg-bg-surface border border-border rounded-xl px-4 py-2.5 text-text text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:border-accent hover:border-accent/50 placeholder:text-text-muted/50"
+              rows={3}
+              placeholder="Briefly describe the project..."
+            />
+          </div>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button type="button" variant="ghost" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
+            <Button type="submit">Create Project</Button>
+          </div>
+        </form>
       </Modal>
 
       {/* Edit Modal */}
-      <Modal isOpen={!!editProject} onClose={() => setEdit(null)} title="Edit Project">
+      <Modal isOpen={!!editProject} onClose={() => setEditProject(null)} title="Edit Project">
         {editProject && (
-          <ProjectForm
-            initial={{ ...editProject, startDate: editProject.startDate ?? '', endDate: editProject.endDate ?? '' }}
-            onSubmit={handleEdit}
-            submitLabel="Save Changes"
-          />
+          <form onSubmit={handleEdit} className="space-y-4">
+            <Input label="Project Name" name="name" defaultValue={editProject.name} required />
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-text">Description</label>
+              <textarea
+                name="description"
+                defaultValue={editProject.description}
+                className="w-full bg-bg-surface border border-border rounded-xl px-4 py-2.5 text-text text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:border-accent hover:border-accent/50 placeholder:text-text-muted/50"
+                rows={3}
+              />
+            </div>
+            <div className="flex justify-end gap-3 pt-4">
+              <Button type="button" variant="ghost" onClick={() => setEditProject(null)}>Cancel</Button>
+              <Button type="submit">Save Changes</Button>
+            </div>
+          </form>
         )}
       </Modal>
 
-      {/* Delete Confirm */}
-      <Modal isOpen={deleteId !== null} onClose={() => setDeleteId(null)} title="Delete Project" width="max-w-sm">
-        <p className="text-text-muted mb-6">This will permanently delete the project and all its tasks. This cannot be undone.</p>
-        <div className="flex gap-3">
-          <Button variant="secondary" className="flex-1" onClick={() => setDeleteId(null)}>Cancel</Button>
-          <Button variant="danger" className="flex-1" onClick={handleDelete}>Delete</Button>
+      {/* Delete Confirmation Modal */}
+      <Modal isOpen={!!deleteProject} onClose={() => setDeleteProject(null)} title="Delete Project">
+        <div className="space-y-4">
+          <p className="text-sm text-text-muted">
+            Are you sure you want to delete <span className="font-semibold text-text">{deleteProject?.name}</span>? 
+            This action cannot be undone and will delete all associated tasks.
+          </p>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button variant="ghost" onClick={() => setDeleteProject(null)}>Cancel</Button>
+            <Button variant="danger" onClick={handleDelete}>Delete Project</Button>
+          </div>
         </div>
       </Modal>
     </div>

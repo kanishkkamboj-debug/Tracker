@@ -1,6 +1,6 @@
 import { useRef, useMemo } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useScroll, Float, MeshTransmissionMaterial, Environment } from '@react-three/drei';
+import { useScroll, Float, MeshTransmissionMaterial, Environment, Sparkles } from '@react-three/drei';
 import type { MotionValue } from 'framer-motion';
 import * as THREE from 'three';
 
@@ -11,48 +11,61 @@ interface CardMeshProps {
   scale: number;
   color: string;
   speed: number;
+  reducedMotion: boolean;
 }
 
-function TaskCardMesh({ position, rotation, scale, color, speed }: CardMeshProps) {
+function TaskCardMesh({ position, rotation, scale, color, speed, reducedMotion }: CardMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null!);
 
   useFrame((state) => {
-    if (!meshRef.current) return;
+    if (!meshRef.current || reducedMotion) return;
     const t = state.clock.elapsedTime;
-    meshRef.current.rotation.x = rotation[0] + Math.sin(t * speed * 0.3) * 0.15;
-    meshRef.current.rotation.y = rotation[1] + Math.cos(t * speed * 0.2) * 0.15;
-    meshRef.current.position.y = position[1] + Math.sin(t * speed * 0.4 + position[0]) * 0.12;
+    // Smoother, more organic breathing and tilting
+    meshRef.current.rotation.x = rotation[0] + Math.sin(t * speed * 0.2) * 0.1;
+    meshRef.current.rotation.y = rotation[1] + Math.cos(t * speed * 0.15) * 0.1;
+    meshRef.current.position.y = position[1] + Math.sin(t * speed * 0.3 + position[0]) * 0.15;
   });
 
   return (
-    <mesh ref={meshRef} position={position} scale={scale}>
-      <boxGeometry args={[1.4, 0.9, 0.06]} />
-      <meshPhysicalMaterial
-        color={color}
-        transparent
-        opacity={0.55}
-        roughness={0.05}
-        metalness={0.1}
-        transmission={0.6}
-        thickness={0.5}
-        envMapIntensity={1.2}
-      />
-    </mesh>
+    <Float speed={reducedMotion ? 0 : speed * 0.5} rotationIntensity={reducedMotion ? 0 : 0.2} floatIntensity={reducedMotion ? 0 : 0.5}>
+      <mesh ref={meshRef} position={position} scale={scale} rotation={rotation}>
+        <boxGeometry args={[1.6, 1.0, 0.04]} />
+        <MeshTransmissionMaterial
+          backside
+          samples={4}
+          thickness={0.2}
+          chromaticAberration={0.03}
+          anisotropy={0.1}
+          distortion={0.1}
+          distortionScale={0.3}
+          temporalDistortion={0.1}
+          iridescence={0.5}
+          iridescenceIOR={1}
+          iridescenceThicknessRange={[0, 1400]}
+          color={color}
+          roughness={0.08}
+          metalness={0.1}
+          transmission={0.9}
+          envMapIntensity={1.5}
+        />
+      </mesh>
+    </Float>
   );
 }
 
 // ─── The whole floating cluster + mouse parallax ───────────────────────────────
 interface SceneProps {
   scrollProgress: MotionValue<number>;
+  reducedMotion: boolean;
 }
 
-function FloatingCards({ scrollProgress }: SceneProps) {
+function FloatingCards({ scrollProgress, reducedMotion }: SceneProps) {
   const groupRef = useRef<THREE.Group>(null!);
   const { viewport } = useThree();
 
-  // Pre-compute deterministic card positions
+  // Premium, vibrant brand palette
   const cards = useMemo(() => {
-    const palette = ['#6366f1', '#8b5cf6', '#3b82f6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899'];
+    const palette = ['#6366f1', '#a855f7', '#ec4899', '#3b82f6', '#14b8a6', '#f59e0b', '#f43f5e'];
     return Array.from({ length: 28 }, (_, i) => {
       const angle  = (i / 28) * Math.PI * 2;
       const r      = 1.8 + (i % 5) * 0.5;
@@ -64,9 +77,9 @@ function FloatingCards({ scrollProgress }: SceneProps) {
           (i % 6) * 0.4 - 1.0,
         ] as [number, number, number],
         rotation: [
-          Math.random() * 0.5 - 0.25,
-          Math.random() * 0.5 - 0.25,
           Math.random() * 0.4 - 0.2,
+          Math.random() * 0.4 - 0.2,
+          Math.random() * 0.2 - 0.1,
         ] as [number, number, number],
         scale:  0.45 + (i % 5) * 0.09,
         color:  palette[i % palette.length],
@@ -83,20 +96,23 @@ function FloatingCards({ scrollProgress }: SceneProps) {
       mouse.current.x = (e.clientX / window.innerWidth  - 0.5) * 2;
       mouse.current.y = (e.clientY / window.innerHeight - 0.5) * 2;
     };
-    canvas.addEventListener('mousemove', move);
+    if (!reducedMotion) {
+      canvas.addEventListener('mousemove', move);
+    }
     return () => canvas.removeEventListener('mousemove', move);
   });
 
   useFrame((state) => {
     if (!groupRef.current) return;
-    const t = state.clock.elapsedTime;
 
-    // Slow global rotation
-    groupRef.current.rotation.y += 0.0015;
+    if (!reducedMotion) {
+      // Slow global rotation
+      groupRef.current.rotation.y += 0.001;
 
-    // Parallax tilt from mouse
-    groupRef.current.rotation.x += (mouse.current.y * 0.18 - groupRef.current.rotation.x) * 0.04;
-    groupRef.current.rotation.z += (-mouse.current.x * 0.08 - groupRef.current.rotation.z) * 0.04;
+      // Parallax tilt from mouse
+      groupRef.current.rotation.x += (mouse.current.y * 0.15 - groupRef.current.rotation.x) * 0.04;
+      groupRef.current.rotation.z += (-mouse.current.x * 0.08 - groupRef.current.rotation.z) * 0.04;
+    }
 
     // Scroll-linked: explode outward as user scrolls
     const sv = scrollProgress.get();
@@ -108,80 +124,90 @@ function FloatingCards({ scrollProgress }: SceneProps) {
   return (
     <group ref={groupRef}>
       {cards.map((c, i) => (
-        <TaskCardMesh key={i} {...c} />
+        <TaskCardMesh key={i} {...c} reducedMotion={reducedMotion} />
       ))}
     </group>
   );
 }
 
 // ─── Particle field ────────────────────────────────────────────────────────────
-function ParticleField() {
+function ParticleField({ reducedMotion }: { reducedMotion: boolean }) {
   const ref = useRef<THREE.Points>(null!);
-  const count = 400;
+  const count = 500;
 
   const [positions, colors] = useMemo(() => {
     const pos = new Float32Array(count * 3);
     const col = new Float32Array(count * 3);
     const palette = [
       new THREE.Color('#6366f1'),
-      new THREE.Color('#8b5cf6'),
+      new THREE.Color('#a855f7'),
       new THREE.Color('#3b82f6'),
+      new THREE.Color('#14b8a6'),
     ];
     for (let i = 0; i < count; i++) {
-      pos[i * 3]     = (Math.random() - 0.5) * 16;
-      pos[i * 3 + 1] = (Math.random() - 0.5) * 12;
-      pos[i * 3 + 2] = (Math.random() - 0.5) * 10;
+      pos[i * 3]     = (Math.random() - 0.5) * 20;
+      pos[i * 3 + 1] = (Math.random() - 0.5) * 15;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 12;
       const c = palette[i % palette.length];
       col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
     }
     return [pos, col];
   }, []);
 
-  useFrame((state) => {
-    if (ref.current) {
-      ref.current.rotation.y += 0.0003;
+  useFrame(() => {
+    if (ref.current && !reducedMotion) {
+      ref.current.rotation.y += 0.0002;
       ref.current.rotation.x += 0.0001;
     }
   });
 
   return (
-    <points ref={ref}>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          args={[positions, 3]}
-        />
-        <bufferAttribute
-          attach="attributes-color"
-          args={[colors, 3]}
-        />
-      </bufferGeometry>
-      <pointsMaterial size={0.025} vertexColors transparent opacity={0.6} sizeAttenuation />
-    </points>
+    <>
+      <points ref={ref}>
+        <bufferGeometry>
+          <bufferAttribute
+            attach="attributes-position"
+            args={[positions, 3]}
+          />
+          <bufferAttribute
+            attach="attributes-color"
+            args={[colors, 3]}
+          />
+        </bufferGeometry>
+        <pointsMaterial size={0.03} vertexColors transparent opacity={0.7} sizeAttenuation />
+      </points>
+      {!reducedMotion && (
+        <Sparkles count={100} scale={12} size={2} speed={0.2} opacity={0.4} color="#a855f7" />
+      )}
+    </>
   );
 }
 
 // ─── Scene wrapper ─────────────────────────────────────────────────────────────
 export default function HeroScene({ scrollProgress }: { scrollProgress: MotionValue<number> }) {
+  // Check user preference for reduced motion
+  const reducedMotion = useMemo(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches, []);
+
   return (
     <Canvas
-      dpr={[1, Math.min(window.devicePixelRatio, 1.5)]}
+      dpr={[1, Math.min(window.devicePixelRatio, 2)]}
       camera={{ position: [0, 0, 5], fov: 60 }}
-      gl={{ antialias: true, alpha: true }}
+      gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       style={{ width: '100%', height: '100%' }}
     >
-      {/* Lights */}
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[4, 4, 2]} intensity={1.2} color="#8b5cf6" />
-      <pointLight position={[-4, -2, 3]} intensity={0.8} color="#6366f1" />
-      <pointLight position={[3,  3, -2]} intensity={0.5} color="#3b82f6" />
+      {/* Dynamic Lighting */}
+      <ambientLight intensity={0.6} />
+      <directionalLight position={[5, 5, 2]} intensity={1.5} color="#a855f7" />
+      <pointLight position={[-4, -3, 3]} intensity={1} color="#6366f1" />
+      <pointLight position={[3,  -2, -2]} intensity={0.8} color="#ec4899" />
+      <pointLight position={[0,  4, -4]} intensity={0.5} color="#14b8a6" />
 
       {/* Scene objects */}
-      <FloatingCards scrollProgress={scrollProgress} />
-      <ParticleField />
+      <FloatingCards scrollProgress={scrollProgress} reducedMotion={reducedMotion} />
+      <ParticleField reducedMotion={reducedMotion} />
 
-      {/* Environment for reflections */}
-      <Environment preset="city" />
+      {/* Environment for reflections (studio gives clean bright highlights) */}
+      <Environment preset="studio" />
     </Canvas>
   );
 }

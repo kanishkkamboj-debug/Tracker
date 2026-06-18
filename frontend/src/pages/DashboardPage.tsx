@@ -1,249 +1,194 @@
-import { useEffect, useState, useRef } from 'react';
-import { motion, useMotionValue, useSpring, animate } from 'framer-motion';
-import {
-  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip,
-  ResponsiveContainer, Legend
-} from 'recharts';
+import { useState, useEffect } from 'react';
 import { dashboardApi } from '@/api/dashboard';
-import type { DashboardSummary, Task } from '@/types';
+import { DashboardSummary } from '@/types';
 import Card from '@/components/ui/Card';
-import Spinner from '@/components/ui/Spinner';
-import { StatusBadge, PriorityBadge } from '@/components/ui/Badge';
-import { FolderKanban, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { useToast } from '@/components/ui/ToastProvider';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { motion } from 'framer-motion';
+import { CheckCircle, Clock, AlertCircle, LayoutDashboard } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import Button from '@/components/ui/Button';
 
-// ─── Animated number count-up ─────────────────────────────────────────────────
+const COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444'];
+
 function AnimatedNumber({ value }: { value: number }) {
-  const ref = useRef<HTMLSpanElement>(null);
+  const [display, setDisplay] = useState(0);
   useEffect(() => {
-    const controls = animate(0, value, {
-      duration: 1.2,
-      ease: 'easeOut',
-      onUpdate: (v) => { if (ref.current) ref.current.textContent = Math.round(v).toString(); },
-    });
-    return controls.stop;
+    let start = 0;
+    const end = value;
+    if (start === end) {
+      setDisplay(end);
+      return;
+    }
+    const duration = 1000;
+    const incrementTime = 30;
+    const steps = duration / incrementTime;
+    const stepValue = end / steps;
+    const timer = setInterval(() => {
+      start += stepValue;
+      if (start >= end) {
+        setDisplay(end);
+        clearInterval(timer);
+      } else {
+        setDisplay(Math.floor(start));
+      }
+    }, incrementTime);
+    return () => clearInterval(timer);
   }, [value]);
-  return <span ref={ref}>0</span>;
+  return <span>{display}</span>;
 }
-
-// ─── Stat Card ─────────────────────────────────────────────────────────────────
-interface StatCardProps {
-  title: string;
-  value: number;
-  icon: React.ReactNode;
-  color: string;
-  delay?: number;
-}
-
-function StatCard({ title, value, icon, color, delay = 0 }: StatCardProps) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.4 }}
-      whileHover={{ y: -2 }}
-      className="bg-bg-surface border border-border rounded-card p-6 shadow-card"
-    >
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-sm font-medium text-text-muted">{title}</span>
-        <div className={`p-2 rounded-lg ${color}`}>{icon}</div>
-      </div>
-      <div className="font-display font-bold text-4xl text-text">
-        <AnimatedNumber value={value} />
-      </div>
-    </motion.div>
-  );
-}
-
-// ─── Colors ───────────────────────────────────────────────────────────────────
-const STATUS_COLORS: Record<string, string> = {
-  TODO: '#64748b', IN_PROGRESS: '#f59e0b', REVIEW: '#8b5cf6', DONE: '#10b981',
-};
-const PRIORITY_COLORS: Record<string, string> = {
-  LOW: '#64748b', MEDIUM: '#f59e0b', HIGH: '#f97316', CRITICAL: '#ef4444',
-};
-const STATUS_LABELS: Record<string, string> = {
-  TODO: 'To Do', IN_PROGRESS: 'In Progress', REVIEW: 'Review', DONE: 'Done',
-};
-
-const CustomTooltip = ({ active, payload, label }: any) =>
-  active && payload?.length ? (
-    <div className="bg-bg-surface2 border border-border rounded-lg px-3 py-2 text-sm text-text shadow-card">
-      {label && <p className="font-medium mb-1">{label}</p>}
-      {payload.map((p: any, i: number) => (
-        <p key={i} style={{ color: p.fill ?? p.color }}>{p.name ?? p.dataKey}: {p.value}</p>
-      ))}
-    </div>
-  ) : null;
 
 export default function DashboardPage() {
+  const { toast } = useToast();
+  const navigate = useNavigate();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    dashboardApi.getSummary()
-      .then(({ data }) => setSummary(data.data))
-      .catch(() => setError('Failed to load dashboard'))
-      .finally(() => setLoading(false));
-  }, []);
+    const fetchSummary = async () => {
+      try {
+        const res = await dashboardApi.getSummary();
+        setSummary(res.data.data);
+      } catch (error) {
+        toast('Failed to load dashboard data', 'error');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchSummary();
+  }, [toast]);
 
-  if (loading) return (
-    <div className="flex h-64 items-center justify-center">
-      <Spinner size="lg" />
-    </div>
-  );
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div>
+          <Skeleton variant="text" className="w-48 h-10 mb-2" />
+          <Skeleton variant="text" className="w-64 h-5" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="p-6">
+              <Skeleton className="w-12 h-12 rounded-xl mb-4" />
+              <Skeleton variant="text" className="w-1/2 h-8 mb-2" />
+              <Skeleton variant="text" className="w-3/4 h-4" />
+            </Card>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="p-6 h-[400px]">
+             <Skeleton className="w-full h-full rounded-lg" />
+          </Card>
+          <Card className="p-6 h-[400px]">
+             <Skeleton className="w-full h-full rounded-lg" />
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
-  if (error || !summary) return (
-    <div className="text-center py-20 text-text-muted">{error || 'No data'}</div>
-  );
+  if (!summary || summary.totalProjects === 0) {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <EmptyState
+          title="Welcome to your Dashboard"
+          description="It looks like you don't have any projects yet. Head over to the Projects page to create your first board and start tracking tasks!"
+          action={<Button onClick={() => navigate('/projects')}>Go to Projects</Button>}
+        />
+      </div>
+    );
+  }
 
-  const statusChartData = Object.entries(summary.tasksByStatus).map(([key, val]) => ({
-    name: STATUS_LABELS[key] ?? key, value: val, fill: STATUS_COLORS[key],
-  }));
+  const statusData = [
+    { name: 'TODO', value: summary.tasksByStatus.TODO || 0 },
+    { name: 'IN PROGRESS', value: summary.tasksByStatus.IN_PROGRESS || 0 },
+    { name: 'REVIEW', value: summary.tasksByStatus.REVIEW || 0 },
+    { name: 'DONE', value: summary.tasksByStatus.DONE || 0 },
+  ].filter(d => d.value > 0);
 
-  const priorityChartData = Object.entries(summary.tasksByPriority).map(([key, val]) => ({
-    name: key.charAt(0) + key.slice(1).toLowerCase(), value: val, fill: PRIORITY_COLORS[key],
-  }));
+  const priorityData = [
+    { name: 'LOW', value: summary.tasksByPriority.LOW || 0 },
+    { name: 'MEDIUM', value: summary.tasksByPriority.MEDIUM || 0 },
+    { name: 'HIGH', value: summary.tasksByPriority.HIGH || 0 },
+    { name: 'CRITICAL', value: summary.tasksByPriority.CRITICAL || 0 },
+  ].filter(d => d.value > 0);
+
+  const stats = [
+    { label: 'Total Projects', value: summary.totalProjects, icon: LayoutDashboard, color: 'text-accent', bg: 'bg-accent/10' },
+    { label: 'Total Tasks', value: summary.totalTasks, icon: Clock, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+    { label: 'Completed Tasks', value: summary.tasksByStatus.DONE || 0, icon: CheckCircle, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+    { label: 'Critical Priority', value: summary.tasksByPriority.CRITICAL || 0, icon: AlertCircle, color: 'text-red-500', bg: 'bg-red-500/10' },
+  ];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
-      {/* Header */}
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-7xl mx-auto space-y-6">
       <div>
-        <h2 className="font-display font-bold text-3xl text-text">Overview</h2>
-        <p className="text-text-muted text-sm mt-1">Your project health at a glance</p>
+        <h1 className="text-3xl font-display font-bold text-text">Dashboard</h1>
+        <p className="text-text-muted mt-1">Here's what's happening across your projects</p>
       </div>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Total Projects"
-          value={summary.totalProjects}
-          icon={<FolderKanban className="w-4 h-4 text-accent" />}
-          color="bg-accent/10"
-          delay={0}
-        />
-        <StatCard
-          title="Active Projects"
-          value={summary.activeProjects}
-          icon={<AlertTriangle className="w-4 h-4 text-amber-400" />}
-          color="bg-amber-500/10"
-          delay={0.08}
-        />
-        <StatCard
-          title="Completed Tasks"
-          value={summary.completedTasks}
-          icon={<CheckCircle2 className="w-4 h-4 text-emerald-400" />}
-          color="bg-emerald-500/10"
-          delay={0.16}
-        />
-        <StatCard
-          title="Pending Tasks"
-          value={summary.pendingTasks}
-          icon={<Clock className="w-4 h-4 text-violet-400" />}
-          color="bg-violet-500/10"
-          delay={0.24}
-        />
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {stats.map((stat, i) => (
+          <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
+            <Card className="p-6 flex items-center gap-4">
+              <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color}`}>
+                <stat.icon className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-text-muted">{stat.label}</p>
+                <p className="text-3xl font-display font-bold text-text">
+                  <AnimatedNumber value={stat.value} />
+                </p>
+              </div>
+            </Card>
+          </motion.div>
+        ))}
       </div>
 
-      {/* Charts */}
+      {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Tasks by Status — Pie */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-bg-surface border border-border rounded-card p-6 shadow-card"
-        >
-          <h3 className="font-semibold text-text mb-4">Tasks by Status</h3>
-          <ResponsiveContainer width="100%" height={240}>
-            <PieChart>
-              <Pie
-                data={statusChartData}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={95}
-                paddingAngle={3}
-                dataKey="value"
-                isAnimationActive
-                animationDuration={800}
-              >
-                {statusChartData.map((entry, i) => (
-                  <Cell key={i} fill={entry.fill} />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomTooltip />} />
-              <Legend
-                formatter={(value) => <span className="text-xs text-text-muted">{value}</span>}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </motion.div>
-
-        {/* Tasks by Priority — Bar */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.35 }}
-          className="bg-bg-surface border border-border rounded-card p-6 shadow-card"
-        >
-          <h3 className="font-semibold text-text mb-4">Tasks by Priority</h3>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={priorityChartData} barSize={32}>
-              <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis allowDecimals={false} tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
-              <Bar dataKey="value" radius={[6, 6, 0, 0]} isAnimationActive animationDuration={800}>
-                {priorityChartData.map((entry, i) => (
-                  <Cell key={i} fill={entry.fill} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </motion.div>
-      </div>
-
-      {/* Recent Tasks */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="bg-bg-surface border border-border rounded-card shadow-card overflow-hidden"
-      >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <h3 className="font-semibold text-text">Recent Tasks</h3>
-        </div>
-        {summary.recentTasks.length === 0 ? (
-          <div className="text-center py-10 text-text-muted text-sm">No tasks yet</div>
-        ) : (
-          <ul>
-            {summary.recentTasks.map((task, i) => (
-              <motion.li
-                key={task.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.45 + i * 0.06 }}
-                className="flex items-center gap-4 px-6 py-4 border-b border-border last:border-0 hover:bg-bg-surface2 transition-colors"
-              >
-                <div className="flex-1 min-w-0">
-                  <Link
-                    to={`/projects/${task.projectId}`}
-                    className="text-sm font-medium text-text hover:text-accent transition-colors truncate block"
-                  >
-                    {task.title}
-                  </Link>
-                  <span className="text-xs text-text-muted">{task.projectName}</span>
-                </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <PriorityBadge priority={task.priority} />
-                  <StatusBadge status={task.status} />
-                </div>
-              </motion.li>
+        {/* Status Pie Chart */}
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold text-text mb-6">Tasks by Status</h3>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={statusData} cx="50%" cy="50%" innerRadius={80} outerRadius={120} paddingAngle={5} dataKey="value">
+                  {statusData.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text)' }} itemStyle={{ color: 'var(--color-text)' }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex justify-center gap-6 mt-4">
+            {statusData.map((entry, index) => (
+              <div key={entry.name} className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                <span className="text-sm text-text-muted">{entry.name}</span>
+              </div>
             ))}
-          </ul>
-        )}
-      </motion.div>
-    </div>
+          </div>
+        </Card>
+
+        {/* Priority Bar Chart */}
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold text-text mb-6">Tasks by Priority</h3>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={priorityData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--color-text-muted)' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--color-text-muted)' }} />
+                <Tooltip cursor={{ fill: 'var(--color-surface-2)' }} contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '12px', color: 'var(--color-text)' }} />
+                <Bar dataKey="value" fill="var(--color-accent)" radius={[6, 6, 0, 0]} barSize={40} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      </div>
+    </motion.div>
   );
 }

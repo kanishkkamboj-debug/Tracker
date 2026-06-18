@@ -1,86 +1,96 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { motion } from 'framer-motion';
-import { Pencil, Trash2, Calendar, User } from 'lucide-react';
-import type { Task } from '@/types';
-import { PriorityBadge } from '@/components/ui/Badge';
+import { MoreVertical, Trash2, ArrowRight } from 'lucide-react';
+import { Task, TaskStatus } from '@/types';
+import Card from '@/components/ui/Card';
 
 interface KanbanCardProps {
   task: Task;
-  onEdit:   (task: Task) => void;
-  onDelete: (task: Task) => void;
+  onDelete: (id: number) => void;
+  onMove?: (id: number, status: TaskStatus) => void;
 }
 
-export default function KanbanCard({ task, onEdit, onDelete }: KanbanCardProps) {
-  const {
-    attributes, listeners, setNodeRef,
-    transform, transition, isDragging,
-  } = useSortable({ id: String(task.id) });
+const PRIORITY_COLORS = {
+  LOW: 'bg-status-todo/10 text-status-todo border-status-todo/20',
+  MEDIUM: 'bg-status-in_progress/10 text-status-in_progress border-status-in_progress/20',
+  HIGH: 'bg-priority-high/10 text-priority-high border-priority-high/20',
+  CRITICAL: 'bg-status-critical/10 text-status-critical border-status-critical/20',
+};
 
-  const style: React.CSSProperties = {
+const STATUS_OPTIONS: { id: TaskStatus; label: string }[] = [
+  { id: 'TODO', label: 'To Do' },
+  { id: 'IN_PROGRESS', label: 'In Progress' },
+  { id: 'REVIEW', label: 'Review' },
+  { id: 'DONE', label: 'Done' },
+];
+
+export default function KanbanCard({ task, onDelete, onMove }: KanbanCardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
+
+  const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.4 : 1,
-    zIndex: isDragging ? 999 : undefined,
   };
 
   return (
-    <motion.div
+    <div
       ref={setNodeRef}
       style={style}
-      layout
-      layoutId={`task-${task.id}`}
-      animate={isDragging
-        ? { scale: 1.04, boxShadow: '0 12px 40px rgba(0,0,0,0.5)', rotate: 1 }
-        : { scale: 1,    boxShadow: '0 2px 8px rgba(0,0,0,0.2)',    rotate: 0 }
-      }
-      transition={{ type: 'spring', stiffness: 300, damping: 24 }}
-      className="bg-bg-surface2 border border-border rounded-xl p-3.5 group cursor-grab active:cursor-grabbing select-none"
-      {...attributes}
-      {...listeners}
+      className={`touch-none ${isDragging ? 'z-50 opacity-50 scale-95' : ''}`}
     >
-      {/* Priority + Actions */}
-      <div className="flex items-center justify-between mb-2">
-        <PriorityBadge priority={task.priority} />
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={(e) => { e.stopPropagation(); onEdit(task); }}
-            onPointerDown={(e) => e.stopPropagation()}
-            className="p-1 rounded-md text-text-muted hover:text-text hover:bg-bg-surface transition-colors"
-          >
-            <Pencil className="w-3 h-3" />
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); onDelete(task); }}
-            onPointerDown={(e) => e.stopPropagation()}
-            className="p-1 rounded-md text-text-muted hover:text-red-400 hover:bg-red-500/10 transition-colors"
-          >
-            <Trash2 className="w-3 h-3" />
-          </button>
+      <Card hover className="p-4 group cursor-grab active:cursor-grabbing relative bg-bg-surface">
+        <div className="flex justify-between items-start mb-2">
+          {/* Drag handle */}
+          <div className="flex-1" {...attributes} {...listeners} tabIndex={0} aria-label={`Drag task ${task.title}`}>
+            <h4 className="font-medium text-text text-sm leading-snug pr-6">{task.title}</h4>
+          </div>
+          
+          {/* Menu Dropdown - Accessible by keyboard */}
+          <div className="relative group/menu flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="p-1 -mt-1 -mr-1 text-text-muted hover:text-text rounded opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-accent outline-none transition-opacity"
+              aria-label="Task options"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </button>
+            <div className="absolute right-0 top-full mt-1 bg-bg-surface border border-border rounded-lg shadow-card hidden group-hover/menu:block focus-within:block z-10 w-40 overflow-hidden">
+              {onMove && (
+                <div className="border-b border-border py-1">
+                  <div className="px-3 py-1 text-xs font-semibold text-text-muted">Move to...</div>
+                  {STATUS_OPTIONS.map(opt => opt.id !== task.status && (
+                    <button
+                      key={opt.id}
+                      onClick={() => onMove(task.id, opt.id)}
+                      className="w-full text-left px-4 py-1.5 text-sm text-text hover:bg-bg-surface2 flex items-center justify-between focus-visible:bg-bg-surface2 outline-none"
+                    >
+                      {opt.label} <ArrowRight className="w-3 h-3 text-text-muted" />
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div className="py-1">
+                <button
+                  onClick={() => onDelete(task.id)}
+                  className="w-full text-left px-4 py-1.5 text-sm text-status-critical hover:bg-status-critical/10 flex items-center focus-visible:bg-status-critical/10 outline-none"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" /> Delete
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Title */}
-      <p className="text-sm font-medium text-text leading-snug mb-2">{task.title}</p>
-
-      {/* Description */}
-      {task.description && (
-        <p className="text-xs text-text-muted line-clamp-2 mb-2">{task.description}</p>
-      )}
-
-      {/* Meta */}
-      <div className="flex items-center gap-3 flex-wrap mt-1">
-        {task.assigneeName && (
-          <span className="flex items-center gap-1 text-xs text-text-muted">
-            <User className="w-3 h-3" />{task.assigneeName}
-          </span>
-        )}
-        {task.dueDate && (
-          <span className="flex items-center gap-1 text-xs text-text-muted">
-            <Calendar className="w-3 h-3" />{new Date(task.dueDate).toLocaleDateString()}
-          </span>
-        )}
-      </div>
-    </motion.div>
+        <div {...attributes} {...listeners} className="flex-1">
+          <p className="text-xs text-text-muted line-clamp-2 mb-4">
+            {task.description || 'No description provided.'}
+          </p>
+          <div className="flex items-center justify-between mt-auto">
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider ${PRIORITY_COLORS[task.priority]}`}>
+              {task.priority}
+            </span>
+          </div>
+        </div>
+      </Card>
+    </div>
   );
 }

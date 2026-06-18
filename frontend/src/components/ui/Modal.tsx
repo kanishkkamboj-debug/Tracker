@@ -7,56 +7,105 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
-  width?: string;
 }
 
-export default function Modal({ isOpen, onClose, title, children, width = 'max-w-lg' }: ModalProps) {
-  const overlayRef = useRef<HTMLDivElement>(null);
+export default function Modal({ isOpen, onClose, title, children }: ModalProps) {
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
-  // Close on Escape
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [onClose]);
+    if (isOpen) {
+      previousFocusRef.current = document.activeElement as HTMLElement;
+      document.body.style.overflow = 'hidden';
+      // Basic focus trap - focus the modal itself or the first focusable element inside it
+      setTimeout(() => {
+        if (modalRef.current) {
+          const focusableElements = modalRef.current.querySelectorAll(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          );
+          if (focusableElements.length) {
+            (focusableElements[0] as HTMLElement).focus();
+          } else {
+            modalRef.current.focus();
+          }
+        }
+      }, 50);
+    } else {
+      document.body.style.overflow = 'unset';
+      if (previousFocusRef.current) {
+        previousFocusRef.current.focus();
+      }
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [isOpen]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      // Simple tab trap
+      if (e.key === 'Tab' && modalRef.current) {
+        const focusableElements = modalRef.current.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        const firstElement = focusableElements[0] as HTMLElement;
+        const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+        
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
+      }
+    };
+    if (isOpen) window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  const titleId = `modal-title-${title.replace(/\s+/g, '-').toLowerCase()}`;
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
+        <>
           <motion.div
-            ref={overlayRef}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
             onClick={onClose}
           />
-
-          {/* Modal Panel */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 16 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 8 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 24 }}
-            className={`relative w-full ${width} bg-bg-surface border border-border rounded-xl2 shadow-card z-10`}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-              <h2 className="font-display font-semibold text-lg text-text">{title}</h2>
-              <button
-                onClick={onClose}
-                className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-bg-surface2 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Body */}
-            <div className="p-6">{children}</div>
-          </motion.div>
-        </div>
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none">
+            <motion.div
+              ref={modalRef}
+              tabIndex={-1}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={titleId}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-bg-surface border border-border w-full max-w-lg rounded-xl shadow-card p-6 pointer-events-auto"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h2 id={titleId} className="text-xl font-display font-semibold text-text">{title}</h2>
+                <button
+                  onClick={onClose}
+                  className="text-text-muted hover:text-text hover:bg-bg-surface2 p-1.5 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-accent outline-none"
+                  aria-label="Close modal"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              {children}
+            </motion.div>
+          </div>
+        </>
       )}
     </AnimatePresence>
   );
