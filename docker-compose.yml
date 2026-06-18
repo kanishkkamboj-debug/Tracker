@@ -1,0 +1,41 @@
+services:
+
+  # ─── MySQL 8 ──────────────────────────────────────────────────────────────────
+  db:
+    image: mysql:8.0
+    container_name: trackflow-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-Kk1234@}
+      MYSQL_DATABASE: trackflow
+    ports:
+      - "3306:3306"
+    volumes:
+      - trackflow_db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD:-Kk1234@}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Spring Boot Backend ──────────────────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: trackflow-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:-Kk1234@}
+      JWT_SECRET:  ${JWT_SECRET:-4b6f4e7a2d3a6a3b4d5c4e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b}
+      CORS_ORIGINS: http://localhost:5173
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/trackflow?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    ports:
+      - "8080:8080"
+
+volumes:
+  trackflow_db:
