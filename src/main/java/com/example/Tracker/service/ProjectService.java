@@ -47,7 +47,9 @@ public class ProjectService {
                 .owner(user)
                 .build();
 
-        return toResponse(projectRepository.save(project));
+        @SuppressWarnings("null")
+        Project savedProject = projectRepository.save(project);
+        return toResponse(savedProject);
     }
 
     @Transactional(readOnly = true)
@@ -71,7 +73,9 @@ public class ProjectService {
         project.setEndDate(request.getEndDate());
         project.setUpdatedAt(LocalDateTime.now());
 
-        return toResponse(projectRepository.save(project));
+        @SuppressWarnings("null")
+        Project savedProject = projectRepository.save(project);
+        return toResponse(savedProject);
     }
 
     @Transactional

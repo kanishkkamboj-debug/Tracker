@@ -2,7 +2,6 @@ package com.example.Tracker.service;
 
 import com.example.Tracker.dto.*;
 import com.example.Tracker.entity.User;
-import com.example.Tracker.exception.ResourceNotFoundException;
 import com.example.Tracker.repository.UserRepository;
 import com.example.Tracker.security.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +34,7 @@ public class AuthService {
                 .build();
 
         user = userRepository.save(user);
+        @SuppressWarnings("null")
         String token = jwtService.generateToken(user);
 
         return AuthResponse.builder()
@@ -51,6 +51,7 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
         User user = (User) auth.getPrincipal();
+        @SuppressWarnings("null")
         String token = jwtService.generateToken(user);
 
         return AuthResponse.builder()

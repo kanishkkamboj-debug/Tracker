@@ -100,25 +100,27 @@ export default function DashboardPage() {
     );
   }
 
+  const tasksByStatus = summary.tasksByStatus || {};
   const statusData = [
-    { name: 'TODO', value: summary.tasksByStatus.TODO || 0 },
-    { name: 'IN PROGRESS', value: summary.tasksByStatus.IN_PROGRESS || 0 },
-    { name: 'REVIEW', value: summary.tasksByStatus.REVIEW || 0 },
-    { name: 'DONE', value: summary.tasksByStatus.DONE || 0 },
+    { name: 'TODO', value: tasksByStatus.TODO || 0 },
+    { name: 'IN PROGRESS', value: tasksByStatus.IN_PROGRESS || 0 },
+    { name: 'REVIEW', value: tasksByStatus.REVIEW || 0 },
+    { name: 'DONE', value: tasksByStatus.DONE || 0 },
   ].filter(d => d.value > 0);
 
+  const tasksByPriority = summary.tasksByPriority || {};
   const priorityData = [
-    { name: 'LOW', value: summary.tasksByPriority.LOW || 0 },
-    { name: 'MEDIUM', value: summary.tasksByPriority.MEDIUM || 0 },
-    { name: 'HIGH', value: summary.tasksByPriority.HIGH || 0 },
-    { name: 'CRITICAL', value: summary.tasksByPriority.CRITICAL || 0 },
+    { name: 'LOW', value: tasksByPriority.LOW || 0 },
+    { name: 'MEDIUM', value: tasksByPriority.MEDIUM || 0 },
+    { name: 'HIGH', value: tasksByPriority.HIGH || 0 },
+    { name: 'CRITICAL', value: tasksByPriority.CRITICAL || 0 },
   ].filter(d => d.value > 0);
 
   const stats = [
-    { label: 'Total Projects', value: summary.totalProjects, icon: LayoutDashboard, color: 'text-accent', bg: 'bg-accent/10' },
-    { label: 'Total Tasks', value: summary.totalTasks, icon: Clock, color: 'text-blue-500', bg: 'bg-blue-500/10' },
-    { label: 'Completed Tasks', value: summary.tasksByStatus.DONE || 0, icon: CheckCircle, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-    { label: 'Critical Priority', value: summary.tasksByPriority.CRITICAL || 0, icon: AlertCircle, color: 'text-red-500', bg: 'bg-red-500/10' },
+    { label: 'Total Projects', value: summary.totalProjects || 0, icon: LayoutDashboard, color: 'text-accent', bg: 'bg-accent/10' },
+    { label: 'Total Tasks', value: summary.totalTasks || 0, icon: Clock, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+    { label: 'Completed Tasks', value: tasksByStatus.DONE || 0, icon: CheckCircle, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+    { label: 'Critical Priority', value: tasksByPriority.CRITICAL || 0, icon: AlertCircle, color: 'text-red-500', bg: 'bg-red-500/10' },
   ];
 
   return (

@@ -19,7 +19,7 @@ public class DashboardSummaryResponse {
     private long onHoldProjects;
     private long totalTasks;
     private long completedTasks;
-    private long pendingTasks;       // TODO + IN_PROGRESS + REVIEW
+    private long pendingTasks;       // Combines To-Do, In-Progress, and Review
     private Map<String, Long> tasksByStatus;
     private Map<String, Long> tasksByPriority;
     private List<TaskResponse> recentTasks;

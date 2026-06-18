@@ -44,7 +44,9 @@ public class TaskService {
                 .project(project)
                 .build();
 
-        return toResponse(taskRepository.save(task));
+        @SuppressWarnings("null")
+        Task savedTask = taskRepository.save(task);
+        return toResponse(savedTask);
     }
 
     @Transactional
@@ -59,7 +61,9 @@ public class TaskService {
         task.setAssigneeName(request.getAssigneeName());
         task.setUpdatedAt(LocalDateTime.now());
 
-        return toResponse(taskRepository.save(task));
+        @SuppressWarnings("null")
+        Task savedTask = taskRepository.save(task);
+        return toResponse(savedTask);
     }
 
     @Transactional
@@ -67,7 +71,9 @@ public class TaskService {
         Task task = getTaskAndVerifyOwner(user, taskId);
         task.setStatus(request.getStatus());
         task.setUpdatedAt(LocalDateTime.now());
-        return toResponse(taskRepository.save(task));
+        @SuppressWarnings("null")
+        Task savedTask = taskRepository.save(task);
+        return toResponse(savedTask);
     }
 
     @Transactional
@@ -79,6 +85,7 @@ public class TaskService {
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
     private Task getTaskAndVerifyOwner(User user, Long taskId) {
+        @SuppressWarnings("null")
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", taskId));
 
