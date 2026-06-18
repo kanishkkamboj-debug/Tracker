@@ -212,13 +212,13 @@ export default function ProjectDetailPage() {
       </div>
 
       {/* Kanban Board */}
-      <div className="flex-1 overflow-x-auto overflow-y-hidden rounded-xl border border-border bg-bg-surface/50 p-6 min-h-[500px]">
+      <div className="flex-1 overflow-x-auto overflow-y-hidden p-2 min-h-[500px]">
         <DndContext
           collisionDetection={closestCorners}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div className="flex gap-6 h-full min-w-max">
+          <div className="flex gap-6 h-full min-w-max pb-4">
             {COLUMNS.map((col) => {
               const columnTasks = tasks.filter((t) => t.status === col.id);
               return (
@@ -233,7 +233,7 @@ export default function ProjectDetailPage() {
             })}
           </div>
 
-          <DragOverlay dropAnimation={{ sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.5' } } }) }}>
+          <DragOverlay dropAnimation={{ sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.8', scale: '1.05', rotate: '2deg' } } }) }}>
             {activeTask ? <KanbanCard task={activeTask} onDelete={() => {}} /> : null}
           </DragOverlay>
         </DndContext>
@@ -247,7 +247,7 @@ export default function ProjectDetailPage() {
             <label className="text-sm font-medium text-text">Description</label>
             <textarea
               name="description"
-              className="w-full bg-bg-surface border border-border rounded-xl px-4 py-2.5 text-text text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-accent placeholder:text-text-muted/50"
+              className="w-full glass-panel rounded-xl px-4 py-2.5 text-text text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-accent placeholder:text-text-muted/50"
               rows={3}
               placeholder="Add more details to this task..."
             />

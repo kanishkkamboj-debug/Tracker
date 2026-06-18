@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, Suspense, lazy } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Zap, User, Mail, Lock, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Zap, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { authApi } from '@/api/auth';
 import { useAuthStore } from '@/stores/authStore';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
+
+const AuthScene = lazy(() => import('@/components/auth/AuthScene'));
 
 export default function RegisterPage() {
   const [name, setName]         = useState('');
@@ -32,36 +34,35 @@ export default function RegisterPage() {
     }
   };
 
-  const perks = ['Free forever', 'Kanban board included', 'Real-time dashboard'];
+  const perks = ['Free forever', '3D Kanban Included', 'Live Dashboard'];
 
   return (
-    <div className="min-h-screen bg-bg flex items-center justify-center p-4 relative overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-accent-purple/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/3 left-1/4 w-72 h-72 bg-accent/10 rounded-full blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-bg flex w-full flex-row-reverse">
+      {/* Right Form Side */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative z-10">
+        <motion.div
+          initial={{ opacity: 0, x: 24 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-md glass-panel p-10 rounded-2xl relative overflow-hidden"
+        >
+          {/* Subtle glow inside the panel */}
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-accent-purple to-accent-pink opacity-50" />
 
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="w-full max-w-md"
-      >
-        <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-accent-purple flex items-center justify-center shadow-glow">
-            <Zap className="w-5 h-5 text-white" />
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-accent-purple flex items-center justify-center shadow-glow">
+              <Zap className="w-5 h-5 text-white" />
+            </div>
+            <span className="font-display font-bold text-2xl tracking-tight">TrackFlow</span>
           </div>
-          <span className="font-display font-bold text-2xl text-text">TrackFlow</span>
-        </div>
 
-        <div className="bg-bg-surface border border-border rounded-xl2 shadow-card p-8">
-          <h2 className="font-display font-semibold text-2xl text-text mb-1">Create your account</h2>
-          <p className="text-text-muted text-sm mb-5">Start tracking projects in minutes</p>
+          <h2 className="font-display font-semibold text-3xl mb-2">Create account</h2>
+          <p className="text-text-muted mb-5">Start tracking projects in minutes</p>
 
-          <div className="flex flex-wrap gap-2 mb-6">
+          <div className="flex flex-wrap gap-2 mb-8">
             {perks.map((perk) => (
-              <div key={perk} className="flex items-center gap-1.5 text-xs text-text-muted">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+              <div key={perk} className="flex items-center gap-1.5 text-xs text-text-muted font-medium bg-white/5 px-2 py-1 rounded-md border border-white/10">
+                <CheckCircle2 className="w-3.5 h-3.5 text-accent" />
                 {perk}
               </div>
             ))}
@@ -71,13 +72,13 @@ export default function RegisterPage() {
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
-              className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mb-4 text-sm text-red-400"
+              className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-6 text-sm text-red-400"
             >
               {error}
             </motion.div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <Input
               label="Full name"
               id="register-name"
@@ -106,20 +107,28 @@ export default function RegisterPage() {
               required
             />
 
-            <Button type="submit" size="lg" loading={loading} className="w-full mt-2">
+            <Button type="submit" size="lg" loading={loading} className="w-full mt-4 shadow-glow">
               Create account
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </form>
 
-          <p className="text-center text-sm text-text-muted mt-6">
+          <p className="text-center text-sm text-text-muted mt-8">
             Already have an account?{' '}
-            <Link to="/login" className="text-accent hover:text-accent-hover transition-colors font-medium">
+            <Link to="/login" className="text-accent hover:text-accent-hover transition-colors font-semibold">
               Sign in
             </Link>
           </p>
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
+
+      {/* Left 3D Particle Side */}
+      <div className="hidden lg:block w-1/2 relative bg-black border-r border-white/5 overflow-hidden">
+        <Suspense fallback={null}>
+          <AuthScene />
+        </Suspense>
+        <div className="absolute inset-0 bg-gradient-to-l from-bg to-transparent pointer-events-none" />
+      </div>
     </div>
   );
 }
