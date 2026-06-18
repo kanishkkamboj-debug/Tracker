@@ -1,0 +1,60 @@
+/* ─── Google Fonts ─────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+/* ─── Tailwind Directives ───────────────────────────────────────────────────── */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Design Tokens ─────────────────────────────────────────────────────────── */
+:root {
+  --color-bg:         #0b0f1a;
+  --color-surface:    #111827;
+  --color-surface-2:  #1a2233;
+  --color-border:     rgba(255,255,255,0.08);
+  --color-accent:     #6366f1;
+  --color-accent-2:   #8b5cf6;
+  --color-text:       #f1f5f9;
+  --color-text-2:     #94a3b8;
+  --radius-card:      1rem;
+  --shadow-card:      0 4px 24px rgba(0,0,0,0.4);
+}
+
+/* ─── Base ───────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+#root { min-height: 100vh; }
+
+/* ─── Scrollbar ─────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
+
+/* ─── Kanban drag ghost ─────────────────────────────────────────────────────── */
+.kanban-card-dragging {
+  opacity: 0.5;
+  transform: scale(0.97);
+}
+
+/* ─── Selection ─────────────────────────────────────────────────────────────── */
+::selection { background: rgba(99,102,241,0.4); color: #fff; }
+
+/* ─── Reduced motion ────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

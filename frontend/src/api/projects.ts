@@ -1,0 +1,24 @@
+import axiosInstance from './axiosInstance';
+import type {
+  ApiResponse, PagedResponse, Project, ProjectRequest, Task
+} from '@/types';
+
+export const projectsApi = {
+  list: (page = 0, size = 20) =>
+    axiosInstance.get<ApiResponse<PagedResponse<Project>>>('/projects', { params: { page, size } }),
+
+  get: (id: number) =>
+    axiosInstance.get<ApiResponse<Project>>(`/projects/${id}`),
+
+  create: (data: ProjectRequest) =>
+    axiosInstance.post<ApiResponse<Project>>('/projects', data),
+
+  update: (id: number, data: ProjectRequest) =>
+    axiosInstance.put<ApiResponse<Project>>(`/projects/${id}`, data),
+
+  delete: (id: number) =>
+    axiosInstance.delete<ApiResponse<void>>(`/projects/${id}`),
+
+  getTasks: (id: number) =>
+    axiosInstance.get<ApiResponse<Task[]>>(`/projects/${id}/tasks`),
+};
