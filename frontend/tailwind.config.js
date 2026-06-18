@@ -10,27 +10,27 @@ export default {
       },
       colors: {
         bg: {
-          DEFAULT: '#0b0f1a',
-          surface: '#111827',
-          surface2: '#1a2233',
-          surface3: '#1f2a3e',
+          DEFAULT: 'var(--color-bg)',
+          surface: 'var(--color-surface)',
+          surface2: 'var(--color-surface-2)',
+          surface3: 'var(--color-surface-3)',
         },
         accent: {
-          DEFAULT: '#6366f1',
-          hover: '#5254cc',
-          purple: '#8b5cf6',
-          pink: '#ec4899',
+          DEFAULT: 'var(--color-accent)',
+          hover: 'var(--color-accent-hover)',
+          purple: 'var(--color-accent-purple)',
+          pink: 'var(--color-accent-pink)',
         },
-        border: 'rgba(255,255,255,0.08)',
+        border: 'var(--color-border)',
         text: {
-          DEFAULT: '#f1f5f9',
-          muted: '#94a3b8',
-          dim: '#64748b',
+          DEFAULT: 'var(--color-text)',
+          muted: 'var(--color-text-muted)',
+          dim: 'var(--color-text-dim)',
         },
         status: {
           todo:        '#64748b',
           in_progress: '#f59e0b',
-          review:      '#6366f1',
+          review:      '#8b5cf6',
           done:        '#10b981',
         },
         priority: {
@@ -41,17 +41,17 @@ export default {
         },
       },
       borderRadius: {
-        card: '1rem',
+        card: 'var(--radius-card)',
         xl2: '1.25rem',
       },
       boxShadow: {
-        card: '0 4px 24px rgba(0,0,0,0.4)',
-        glow: '0 0 24px rgba(99,102,241,0.3)',
-        'glow-sm': '0 0 12px rgba(99,102,241,0.2)',
+        card: 'var(--shadow-card)',
+        glow: 'var(--shadow-glow)',
+        'glow-sm': 'var(--shadow-glow-sm)',
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'hero-gradient': 'linear-gradient(135deg, #0b0f1a 0%, #1a1040 50%, #0b0f1a 100%)',
+        'hero-gradient': 'linear-gradient(135deg, var(--color-bg) 0%, rgba(99,102,241,0.1) 50%, var(--color-bg) 100%)',
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease forwards',

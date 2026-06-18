@@ -1,4 +1,5 @@
 import { useLocation } from 'react-router-dom';
+import ThemeToggle from '@/components/ui/ThemeToggle';
 
 const pageNames: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -13,8 +14,9 @@ export default function Navbar() {
     : (pageNames[pathname] ?? 'TrackFlow');
 
   return (
-    <header className="h-16 bg-bg-surface border-b border-border flex items-center px-6 flex-shrink-0">
+    <header className="h-16 bg-bg-surface border-b border-border flex items-center justify-between px-6 flex-shrink-0">
       <h1 className="font-display font-semibold text-xl text-text">{title}</h1>
+      <ThemeToggle />
     </header>
   );
 }
