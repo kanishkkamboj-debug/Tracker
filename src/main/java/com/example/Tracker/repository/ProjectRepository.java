@@ -12,18 +12,18 @@ import java.util.Optional;
 public interface ProjectRepository extends JpaRepository<Project, Long> {
 
     // Paginated list of projects for a specific owner
-    Page<Project> findByOwnerId(Long ownerId, Pageable pageable);
+    Page<Project> findByWorkspaceOwnerId(Long ownerId, Pageable pageable);
 
-    // Load project WITH owner in one query (avoids N+1)
-    @EntityGraph(attributePaths = {"owner"})
-    Optional<Project> findWithOwnerById(Long id);
+    // Load project WITH workspace in one query (avoids N+1)
+    @EntityGraph(attributePaths = {"workspace"})
+    Optional<Project> findWithWorkspaceById(Long id);
 
     // Count by owner
-    long countByOwnerId(Long ownerId);
+    long countByWorkspaceOwnerId(Long ownerId);
 
     // Count by owner and status
-    long countByOwnerIdAndStatus(Long ownerId, ProjectStatus status);
+    long countByWorkspaceOwnerIdAndStatus(Long ownerId, ProjectStatus status);
 
     // Check ownership
-    boolean existsByIdAndOwnerId(Long id, Long ownerId);
+    boolean existsByIdAndWorkspaceOwnerId(Long id, Long ownerId);
 }

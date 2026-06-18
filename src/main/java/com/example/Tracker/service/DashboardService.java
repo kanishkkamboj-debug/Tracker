@@ -29,14 +29,14 @@ public class DashboardService {
         Long ownerId = user.getId();
 
         // Project counts
-        long totalProjects  = projectRepository.countByOwnerId(ownerId);
-        long activeProjects = projectRepository.countByOwnerIdAndStatus(ownerId, ProjectStatus.ACTIVE);
-        long completedProjects = projectRepository.countByOwnerIdAndStatus(ownerId, ProjectStatus.COMPLETED);
-        long onHoldProjects = projectRepository.countByOwnerIdAndStatus(ownerId, ProjectStatus.ON_HOLD);
+        long totalProjects  = projectRepository.countByWorkspaceOwnerId(ownerId);
+        long activeProjects = projectRepository.countByWorkspaceOwnerIdAndStatus(ownerId, ProjectStatus.ACTIVE);
+        long completedProjects = projectRepository.countByWorkspaceOwnerIdAndStatus(ownerId, ProjectStatus.COMPLETED);
+        long onHoldProjects = projectRepository.countByWorkspaceOwnerIdAndStatus(ownerId, ProjectStatus.ON_HOLD);
 
         // Task counts
-        long totalTasks     = taskRepository.countByProjectOwnerId(ownerId);
-        long completedTasks = taskRepository.countByProjectOwnerIdAndStatus(ownerId, TaskStatus.DONE);
+        long totalTasks     = taskRepository.countByProjectWorkspaceOwnerId(ownerId);
+        long completedTasks = taskRepository.countByProjectWorkspaceOwnerIdAndStatus(ownerId, TaskStatus.DONE);
         long pendingTasks   = totalTasks - completedTasks;
 
         // Tasks by status (for chart)
@@ -60,7 +60,7 @@ public class DashboardService {
 
         // Recent tasks
         List<TaskResponse> recentTasks = taskRepository
-                .findTop5ByProjectOwnerIdOrderByUpdatedAtDesc(ownerId)
+                .findTop5ByProjectWorkspaceOwnerIdOrderByUpdatedAtDesc(ownerId)
                 .stream()
                 .map(this::taskToResponse)
                 .toList();
@@ -87,7 +87,7 @@ public class DashboardService {
                 .priority(task.getPriority())
                 .status(task.getStatus())
                 .dueDate(task.getDueDate())
-                .assigneeName(task.getAssigneeName())
+                .assigneeName(task.getAssignee() != null ? task.getAssignee().getName() : null)
                 .projectId(task.getProject().getId())
                 .projectName(task.getProject().getName())
                 .createdAt(task.getCreatedAt())

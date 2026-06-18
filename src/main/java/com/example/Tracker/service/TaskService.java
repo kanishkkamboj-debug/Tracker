@@ -27,10 +27,10 @@ public class TaskService {
 
     @Transactional
     public TaskResponse createTask(User user, TaskRequest request) {
-        Project project = projectRepository.findWithOwnerById(request.getProjectId())
+        Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new ResourceNotFoundException("Project", request.getProjectId()));
 
-        if (!project.getOwner().getId().equals(user.getId())) {
+        if (!project.getWorkspace().getOwner().getId().equals(user.getId())) {
             throw new UnauthorizedException("You do not own this project");
         }
 
@@ -40,7 +40,6 @@ public class TaskService {
                 .priority(request.getPriority() != null ? request.getPriority() : TaskPriority.MEDIUM)
                 .status(request.getStatus() != null ? request.getStatus() : TaskStatus.TODO)
                 .dueDate(request.getDueDate())
-                .assigneeName(request.getAssigneeName())
                 .project(project)
                 .build();
 
@@ -58,7 +57,6 @@ public class TaskService {
         if (request.getPriority() != null) task.setPriority(request.getPriority());
         if (request.getStatus() != null) task.setStatus(request.getStatus());
         task.setDueDate(request.getDueDate());
-        task.setAssigneeName(request.getAssigneeName());
         task.setUpdatedAt(LocalDateTime.now());
 
         @SuppressWarnings("null")
@@ -89,7 +87,7 @@ public class TaskService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", taskId));
 
-        if (!task.getProject().getOwner().getId().equals(user.getId())) {
+        if (!task.getProject().getWorkspace().getOwner().getId().equals(user.getId())) {
             throw new UnauthorizedException("You do not own this task");
         }
         return task;
@@ -103,7 +101,7 @@ public class TaskService {
                 .priority(task.getPriority())
                 .status(task.getStatus())
                 .dueDate(task.getDueDate())
-                .assigneeName(task.getAssigneeName())
+                .assigneeName(task.getAssignee() != null ? task.getAssignee().getName() : null)
                 .projectId(task.getProject().getId())
                 .projectName(task.getProject().getName())
                 .createdAt(task.getCreatedAt())

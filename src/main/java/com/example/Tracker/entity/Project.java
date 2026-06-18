@@ -10,7 +10,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "projects", indexes = {
-    @Index(name = "idx_project_owner", columnList = "owner_id"),
+    @Index(name = "idx_project_workspace", columnList = "workspace_id"),
     @Index(name = "idx_project_status", columnList = "status")
 })
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
@@ -35,8 +35,16 @@ public class Project {
     private LocalDate endDate;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "owner_id", nullable = false)
-    private User owner;
+    @JoinColumn(name = "workspace_id", nullable = false)
+    private Workspace workspace;
+
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ProjectMember> members = new ArrayList<>();
+
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<Sprint> sprints = new ArrayList<>();
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

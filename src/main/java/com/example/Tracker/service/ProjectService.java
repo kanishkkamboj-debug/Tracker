@@ -7,10 +7,12 @@ import com.example.Tracker.entity.Project;
 import com.example.Tracker.entity.ProjectStatus;
 import com.example.Tracker.entity.Task;
 import com.example.Tracker.entity.User;
+import com.example.Tracker.entity.Workspace;
 import com.example.Tracker.exception.ResourceNotFoundException;
 import com.example.Tracker.exception.UnauthorizedException;
 import com.example.Tracker.repository.ProjectRepository;
 import com.example.Tracker.repository.TaskRepository;
+import com.example.Tracker.repository.WorkspaceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -28,23 +30,34 @@ public class ProjectService {
 
     private final ProjectRepository projectRepository;
     private final TaskRepository taskRepository;
+    private final WorkspaceRepository workspaceRepository;
 
     @Transactional(readOnly = true)
     public Page<ProjectResponse> getProjects(User user, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
-        return projectRepository.findByOwnerId(user.getId(), pageable)
+        return projectRepository.findByWorkspaceOwnerId(user.getId(), pageable)
                 .map(this::toResponse);
     }
 
     @Transactional
     public ProjectResponse createProject(User user, ProjectRequest request) {
+        Workspace workspace = workspaceRepository.findByOwnerId(user.getId())
+                .stream().findFirst()
+                .orElseGet(() -> {
+                    Workspace newWorkspace = Workspace.builder()
+                            .name("Personal Workspace")
+                            .owner(user)
+                            .build();
+                    return workspaceRepository.save(newWorkspace);
+                });
+
         Project project = Project.builder()
                 .name(request.getName())
                 .description(request.getDescription())
                 .status(request.getStatus() != null ? request.getStatus() : ProjectStatus.ACTIVE)
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
-                .owner(user)
+                .workspace(workspace)
                 .build();
 
         @SuppressWarnings("null")
@@ -54,7 +67,7 @@ public class ProjectService {
 
     @Transactional(readOnly = true)
     public ProjectResponse getProject(User user, Long projectId) {
-        Project project = projectRepository.findWithOwnerById(projectId)
+        Project project = projectRepository.findWithWorkspaceById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project", projectId));
         assertOwner(user, project);
         return toResponse(project);
@@ -62,7 +75,7 @@ public class ProjectService {
 
     @Transactional
     public ProjectResponse updateProject(User user, Long projectId, ProjectRequest request) {
-        Project project = projectRepository.findWithOwnerById(projectId)
+        Project project = projectRepository.findWithWorkspaceById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project", projectId));
         assertOwner(user, project);
 
@@ -80,7 +93,7 @@ public class ProjectService {
 
     @Transactional
     public void deleteProject(User user, Long projectId) {
-        Project project = projectRepository.findWithOwnerById(projectId)
+        Project project = projectRepository.findWithWorkspaceById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project", projectId));
         assertOwner(user, project);
         projectRepository.delete(project);
@@ -88,7 +101,7 @@ public class ProjectService {
 
     @Transactional(readOnly = true)
     public List<TaskResponse> getProjectTasks(User user, Long projectId) {
-        if (!projectRepository.existsByIdAndOwnerId(projectId, user.getId())) {
+        if (!projectRepository.existsByIdAndWorkspaceOwnerId(projectId, user.getId())) {
             throw new ResourceNotFoundException("Project", projectId);
         }
         return taskRepository.findByProjectIdOrderByUpdatedAtDesc(projectId)
@@ -98,7 +111,7 @@ public class ProjectService {
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
     private void assertOwner(User user, Project project) {
-        if (!project.getOwner().getId().equals(user.getId())) {
+        if (!project.getWorkspace().getOwner().getId().equals(user.getId())) {
             throw new UnauthorizedException("You do not own this project");
         }
     }
@@ -111,8 +124,8 @@ public class ProjectService {
                 .status(project.getStatus())
                 .startDate(project.getStartDate())
                 .endDate(project.getEndDate())
-                .ownerId(project.getOwner().getId())
-                .ownerName(project.getOwner().getName())
+                .ownerId(project.getWorkspace().getOwner().getId())
+                .ownerName(project.getWorkspace().getOwner().getName())
                 .taskCount(project.getTasks().size())
                 .createdAt(project.getCreatedAt())
                 .updatedAt(project.getUpdatedAt())
@@ -127,7 +140,7 @@ public class ProjectService {
                 .priority(task.getPriority())
                 .status(task.getStatus())
                 .dueDate(task.getDueDate())
-                .assigneeName(task.getAssigneeName())
+                .assigneeName(task.getAssignee() != null ? task.getAssignee().getName() : null)
                 .projectId(task.getProject().getId())
                 .projectName(task.getProject().getName())
                 .createdAt(task.getCreatedAt())

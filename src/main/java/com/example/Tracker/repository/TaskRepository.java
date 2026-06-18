@@ -22,26 +22,26 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     Page<Task> findByProjectId(Long projectId, Pageable pageable);
 
     // Count all tasks owned by user (via project ownership)
-    @Query("SELECT COUNT(t) FROM Task t WHERE t.project.owner.id = :ownerId")
-    long countByProjectOwnerId(@Param("ownerId") Long ownerId);
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.project.workspace.owner.id = :ownerId")
+    long countByProjectWorkspaceOwnerId(@Param("ownerId") Long ownerId);
 
     // Count by status across all user's projects
-    @Query("SELECT COUNT(t) FROM Task t WHERE t.project.owner.id = :ownerId AND t.status = :status")
-    long countByProjectOwnerIdAndStatus(@Param("ownerId") Long ownerId, @Param("status") TaskStatus status);
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.project.workspace.owner.id = :ownerId AND t.status = :status")
+    long countByProjectWorkspaceOwnerIdAndStatus(@Param("ownerId") Long ownerId, @Param("status") TaskStatus status);
 
     // Count by priority across all user's projects
-    @Query("SELECT COUNT(t) FROM Task t WHERE t.project.owner.id = :ownerId AND t.priority = :priority")
-    long countByProjectOwnerIdAndPriority(@Param("ownerId") Long ownerId, @Param("priority") TaskPriority priority);
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.project.workspace.owner.id = :ownerId AND t.priority = :priority")
+    long countByProjectWorkspaceOwnerIdAndPriority(@Param("ownerId") Long ownerId, @Param("priority") TaskPriority priority);
 
     // 5 most recently updated tasks across all user's projects
-    @Query("SELECT t FROM Task t WHERE t.project.owner.id = :ownerId ORDER BY t.updatedAt DESC LIMIT 5")
-    List<Task> findTop5ByProjectOwnerIdOrderByUpdatedAtDesc(@Param("ownerId") Long ownerId);
+    @Query("SELECT t FROM Task t WHERE t.project.workspace.owner.id = :ownerId ORDER BY t.updatedAt DESC LIMIT 5")
+    List<Task> findTop5ByProjectWorkspaceOwnerIdOrderByUpdatedAtDesc(@Param("ownerId") Long ownerId);
 
     // Status distribution for dashboard chart
-    @Query("SELECT t.status, COUNT(t) FROM Task t WHERE t.project.owner.id = :ownerId GROUP BY t.status")
+    @Query("SELECT t.status, COUNT(t) FROM Task t WHERE t.project.workspace.owner.id = :ownerId GROUP BY t.status")
     List<Object[]> countByStatusForOwner(@Param("ownerId") Long ownerId);
 
     // Priority distribution for dashboard chart
-    @Query("SELECT t.priority, COUNT(t) FROM Task t WHERE t.project.owner.id = :ownerId GROUP BY t.priority")
+    @Query("SELECT t.priority, COUNT(t) FROM Task t WHERE t.project.workspace.owner.id = :ownerId GROUP BY t.priority")
     List<Object[]> countByPriorityForOwner(@Param("ownerId") Long ownerId);
 }
