@@ -74,6 +74,12 @@ public class TaskService {
         return toResponse(savedTask);
     }
 
+    @Transactional(readOnly = true)
+    public TaskResponse getTask(User user, Long taskId) {
+        Task task = getTaskAndVerifyOwner(user, taskId);
+        return toResponse(task);
+    }
+
     @Transactional
     public void deleteTask(User user, Long taskId) {
         Task task = getTaskAndVerifyOwner(user, taskId);

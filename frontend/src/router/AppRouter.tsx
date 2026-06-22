@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
+import { useSettingsStore } from '@/stores/settingsStore';
 import AppShell from '@/components/layout/AppShell';
 import Spinner from '@/components/ui/Spinner';
 
@@ -45,6 +46,23 @@ function ScrollToTop() {
 }
 
 export default function AppRouter() {
+  const { user, checkAuth, isLoading } = useAuthStore();
+  const fetchSettings = useSettingsStore(s => s.fetchSettings);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  useEffect(() => {
+    if (user) {
+      fetchSettings();
+    }
+  }, [user, fetchSettings]);
+
+  if (isLoading) {
+    return <PageFallback />;
+  }
+
   return (
     <BrowserRouter>
       <ScrollToTop />

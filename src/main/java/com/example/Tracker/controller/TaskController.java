@@ -26,6 +26,13 @@ public class TaskController {
                 .body(ApiResponse.success("Task created", created));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<TaskResponse>> getTask(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(taskService.getTask(user, id)));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<TaskResponse>> updateTask(
             @AuthenticationPrincipal User user,

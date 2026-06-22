@@ -1,11 +1,13 @@
 import axiosInstance from './axiosInstance';
-import type {
-  ApiResponse, PagedResponse, Project, ProjectRequest, Task
-} from '@/types';
+import type { ApiResponse, PagedResponse, Project, ProjectRequest, Task } from '@/types';
 
 export const projectsApi = {
   list: (page = 0, size = 20) =>
     axiosInstance.get<ApiResponse<PagedResponse<Project>>>('/projects', { params: { page, size } }),
+
+  // alias used by old code
+  getAll: () =>
+    axiosInstance.get<ApiResponse<PagedResponse<Project>>>('/projects', { params: { page: 0, size: 100 } }),
 
   get: (id: number) =>
     axiosInstance.get<ApiResponse<Project>>(`/projects/${id}`),

@@ -1,14 +1,14 @@
 import { useEffect } from 'react';
-import { useThemeStore } from './themeStore';
+import { useSettingsStore } from './settingsStore';
 
 export function useThemeInit() {
-  const theme = useThemeStore((s) => s.theme);
+  const theme = useSettingsStore((s) => s.settings.theme);
 
   useEffect(() => {
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark');
 
-    if (theme === 'system') {
+    if (theme === 'system' || !theme) {
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       root.classList.add(systemTheme);
     } else {

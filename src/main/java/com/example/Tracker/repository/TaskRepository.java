@@ -44,4 +44,13 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     // Priority distribution for dashboard chart
     @Query("SELECT t.priority, COUNT(t) FROM Task t WHERE t.project.workspace.owner.id = :ownerId GROUP BY t.priority")
     List<Object[]> countByPriorityForOwner(@Param("ownerId") Long ownerId);
+
+    // Count tasks assigned to a specific user
+    long countByAssigneeId(Long assigneeId);
+
+    // Count tasks assigned to a specific user filtered by status
+    long countByAssigneeIdAndStatus(Long assigneeId, TaskStatus status);
+
+    // All tasks assigned to a specific user
+    List<Task> findByAssigneeId(Long assigneeId);
 }

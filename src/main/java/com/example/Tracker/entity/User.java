@@ -39,6 +39,21 @@ public class User implements UserDetails {
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(length = 255)
+    private String avatarUrl;
+
+    @Column(length = 100)
+    private String jobTitle;
+
+    @Column(length = 1000)
+    private String bio;
+
+    @Column(length = 100)
+    private String location;
+
+    @Column(length = 255)
+    private String githubUrl;
+
     // ─── UserDetails impl ─────────────────────────────────────────────────────
 
     @Override

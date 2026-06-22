@@ -16,17 +16,29 @@
     
     --color-accent:     #A5C0F3;
     --color-accent-hover: #93C5FD;
-    --color-accent-purple: #A5C0F3;
-    --color-accent-pink: #A5C0F3;
-    
     --color-text:       #F8FAFC;
     --color-text-muted: #94A3B8;
     --color-text-dim:   #475569;
     
     --radius-card:      0.5rem;
     --shadow-card:      0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --shadow-glow:      none;
-    --shadow-glow-sm:   none;
+  }
+
+  .light {
+    --color-bg:         #F8FAFC;
+    --color-surface:    #FFFFFF;
+    --color-surface-2:  #F1F5F9;
+    --color-surface-3:  #E2E8F0;
+    --color-border:     #E2E8F0;
+    
+    --color-accent:     #3B82F6;
+    --color-accent-hover: #2563EB;
+    --color-text:       #0F172A;
+    --color-text-muted: #64748B;
+    --color-text-dim:   #94A3B8;
+    
+    --radius-card:      0.5rem;
+    --shadow-card:      0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   }
 }
 

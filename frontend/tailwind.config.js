@@ -16,6 +16,11 @@ export default {
           surface2: 'var(--color-surface-2)',
           surface3: 'var(--color-surface-3)',
         },
+        surface: {
+          DEFAULT: 'var(--color-surface)',
+          '2': 'var(--color-surface-2)',
+          '3': 'var(--color-surface-3)',
+        },
         accent: {
           DEFAULT: 'var(--color-accent)',
           hover: 'var(--color-accent-hover)',

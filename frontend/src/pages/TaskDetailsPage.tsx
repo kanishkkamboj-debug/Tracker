@@ -1,226 +1,386 @@
-import { useState } from 'react';
-import { Share2, MoreHorizontal, AlertCircle, Plus, Paperclip, Clock, Play } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { Share2, MoreHorizontal, AlertCircle, ChevronRight, Pencil, Trash2, Check, X } from 'lucide-react';
+import { tasksApi } from '@/api/tasks';
+import { Task, TaskStatus, TaskPriority } from '@/types';
 import Button from '@/components/ui/Button';
+import { Select } from '@/components/ui/Select';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { useToast } from '@/components/ui/ToastProvider';
+import Modal from '@/components/ui/Modal';
+import Input from '@/components/ui/Input';
+
+const STATUS_CONFIG: Record<TaskStatus, { label: string; color: string; border: string; dot: string }> = {
+  TODO:        { label: 'To Do',       color: 'text-slate-400',   border: 'border-slate-400/30',   dot: 'bg-slate-400' },
+  IN_PROGRESS: { label: 'In Progress', color: 'text-accent',      border: 'border-accent/30',      dot: 'bg-accent' },
+  REVIEW:      { label: 'Review',      color: 'text-amber-400',   border: 'border-amber-400/30',   dot: 'bg-amber-400' },
+  DONE:        { label: 'Done',        color: 'text-emerald-400', border: 'border-emerald-400/30', dot: 'bg-emerald-400' },
+};
+
+const PRIORITY_CONFIG: Record<TaskPriority, { label: string; color: string; border: string; icon: string }> = {
+  LOW:      { label: 'Low',      color: 'text-slate-400',   border: 'border-slate-400/30',   icon: '↓' },
+  MEDIUM:   { label: 'Medium',   color: 'text-blue-400',    border: 'border-blue-400/30',    icon: '→' },
+  HIGH:     { label: 'High',     color: 'text-orange-400',  border: 'border-orange-400/30',  icon: '↑' },
+  CRITICAL: { label: 'Critical', color: 'text-red-400',     border: 'border-red-400/30',     icon: '⚡' },
+};
+
+function fmt(d: string | null | undefined) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
 
 export default function TaskDetailsPage() {
-  const [isLoading] = useState(false);
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  if (isLoading) return <div className="p-8">Loading task...</div>;
+  const [task, setTask] = useState<Task | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Inline status change
+  const [editStatus, setEditStatus] = useState<TaskStatus>('TODO');
+
+  useEffect(() => {
+    if (!id) return;
+    const load = async () => {
+      try {
+        setIsLoading(true);
+        const res = await tasksApi.get(Number(id));
+        setTask(res.data.data);
+        setEditStatus(res.data.data.status);
+      } catch {
+        toast('Failed to load task', 'error');
+        navigate('/tasks');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    load();
+  }, [id, navigate, toast]);
+
+  const handleStatusChange = async (newStatus: TaskStatus) => {
+    if (!task) return;
+    const prev = task.status;
+    setTask({ ...task, status: newStatus });
+    setEditStatus(newStatus);
+    try {
+      await tasksApi.updateStatus(task.id, newStatus);
+      toast('Status updated', 'success');
+    } catch {
+      setTask({ ...task, status: prev });
+      setEditStatus(prev);
+      toast('Failed to update status', 'error');
+    }
+  };
+
+  const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!task) return;
+    setIsSaving(true);
+    const fd = new FormData(e.currentTarget);
+    try {
+      const res = await tasksApi.update(task.id, {
+        projectId:    task.projectId,
+        title:        fd.get('title') as string,
+        description:  fd.get('description') as string,
+        priority:     fd.get('priority') as TaskPriority,
+        status:       task.status,
+        dueDate:      (fd.get('dueDate') as string) || null,
+        assigneeName: (fd.get('assigneeName') as string) || null,
+      });
+      setTask(res.data.data);
+      setIsEditOpen(false);
+      toast('Task updated', 'success');
+    } catch {
+      toast('Failed to update task', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!task) return;
+    setIsDeleting(true);
+    try {
+      await tasksApi.delete(task.id);
+      toast('Task deleted', 'success');
+      navigate(-1);
+    } catch {
+      toast('Failed to delete task', 'error');
+      setIsDeleting(false);
+    }
+  };
+
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast('Link copied to clipboard!', 'success');
+  };
+
+  if (isLoading) {
+    return (
+      <div className="max-w-[1400px] mx-auto p-8 space-y-6">
+        <Skeleton className="w-64 h-5" />
+        <Skeleton className="w-full h-12" />
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <div className="xl:col-span-2 space-y-4">
+            <Skeleton className="w-full h-48 rounded-xl" />
+            <Skeleton className="w-full h-32 rounded-xl" />
+          </div>
+          <Skeleton className="w-full h-64 rounded-xl" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!task) return null;
+
+  const S = STATUS_CONFIG[task.status] ?? STATUS_CONFIG.TODO;
+  const P = PRIORITY_CONFIG[task.priority] ?? PRIORITY_CONFIG.MEDIUM;
 
   return (
-    <div className="max-w-[1400px] mx-auto p-8">
-      
-      {/* Header / Breadcrumbs */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center text-sm text-text-muted font-medium">
-          <span className="hover:text-white cursor-pointer transition-colors">Projects</span>
-          <span className="mx-2 text-border">›</span>
-          <span className="hover:text-white cursor-pointer transition-colors">Core Platform v2</span>
-          <span className="mx-2 text-border">›</span>
-          <span className="text-white font-bold tracking-wider">TF-842</span>
+    <div className="max-w-[1400px] mx-auto">
+      {/* Breadcrumbs */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center text-sm text-text-muted font-medium gap-1">
+          <Link to="/projects" className="hover:text-white transition-colors">Projects</Link>
+          <ChevronRight className="w-4 h-4" />
+          <Link to={`/projects/${task.projectId}`} className="hover:text-white transition-colors">
+            {task.projectName}
+          </Link>
+          <ChevronRight className="w-4 h-4" />
+          <span className="text-white font-bold">TASK-{task.id}</span>
         </div>
         <div className="flex gap-2">
-          <Button variant="ghost" className="border border-border text-text hover:text-white bg-bg hover:bg-surface-2 transition-colors px-3 py-1.5 h-auto text-sm">
-            <Share2 className="w-4 h-4 mr-2" /> Share
+          <Button variant="ghost" onClick={handleShare} className="border border-border text-sm gap-2">
+            <Share2 className="w-4 h-4" /> Share
           </Button>
-          <Button variant="ghost" className="border border-border text-text hover:text-white bg-bg hover:bg-surface-2 transition-colors px-3 py-1.5 h-auto">
-            <MoreHorizontal className="w-4 h-4" />
+          <Button variant="ghost" onClick={() => setIsEditOpen(true)} className="border border-border text-sm gap-2">
+            <Pencil className="w-4 h-4" /> Edit
+          </Button>
+          <Button variant="ghost" onClick={() => setShowDeleteConfirm(true)} className="border border-red-500/20 text-red-400 hover:bg-red-500/10 text-sm gap-2">
+            <Trash2 className="w-4 h-4" />
           </Button>
         </div>
       </div>
 
       {/* Title & Badges */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white tracking-tight mb-4">Implement JWT Security</h1>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded border border-emerald-400/30 text-emerald-400 text-xs font-bold uppercase tracking-wider bg-emerald-400/10">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> IN PROGRESS
+        <h1 className="text-3xl font-bold text-white tracking-tight mb-4">{task.title}</h1>
+        <div className="flex items-center flex-wrap gap-3">
+          {/* Status badge (clickable to cycle) */}
+          <div className="relative group">
+            <div className={`flex items-center gap-1.5 px-3 py-1 rounded border ${S.border} ${S.color} text-xs font-bold uppercase tracking-wider bg-current/10 cursor-pointer`}
+              style={{ background: undefined }}>
+              <div className={`w-1.5 h-1.5 rounded-full ${S.dot}`} />
+              {S.label}
+            </div>
+            {/* Status dropdown */}
+            <div className="hidden group-hover:flex absolute top-full left-0 mt-1 z-10 flex-col bg-surface border border-border rounded-xl shadow-xl overflow-hidden min-w-[140px]">
+              {(Object.keys(STATUS_CONFIG) as TaskStatus[]).map((s) => {
+                const C = STATUS_CONFIG[s];
+                return (
+                  <button
+                    key={s}
+                    onClick={() => handleStatusChange(s)}
+                    className={`flex items-center gap-2 px-3 py-2 text-xs hover:bg-surface-2 transition-colors ${task.status === s ? 'bg-surface-2 font-bold' : ''} ${C.color}`}
+                  >
+                    <div className={`w-1.5 h-1.5 rounded-full ${C.dot}`} />
+                    {C.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded border border-red-400/30 text-red-400 text-xs font-bold uppercase tracking-wider bg-red-400/10">
-            <AlertCircle className="w-3 h-3" /> HIGH
+
+          {/* Priority badge */}
+          <div className={`flex items-center gap-1.5 px-3 py-1 rounded border ${P.border} ${P.color} text-xs font-bold uppercase tracking-wider`}>
+            <AlertCircle className="w-3 h-3" />
+            {P.label}
           </div>
-          <div className="px-3 py-1 rounded text-text-muted text-xs font-bold uppercase tracking-wider bg-surface-3">
-            BACKEND
-          </div>
-          <div className="px-3 py-1 rounded text-text-muted text-xs font-bold uppercase tracking-wider bg-surface-3">
-            SECURITY
-          </div>
+
+          {/* Project tag */}
+          <Link
+            to={`/projects/${task.projectId}`}
+            className="px-3 py-1 rounded text-text-muted text-xs font-bold uppercase tracking-wider bg-surface-3 hover:text-white hover:bg-surface-2 transition-colors"
+          >
+            {task.projectName}
+          </Link>
         </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        
         {/* Left Column */}
         <div className="xl:col-span-2 space-y-6">
-          
           {/* Description */}
           <div className="glass-panel p-6">
             <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
               <span className="text-text-muted">📄</span> Description
             </h3>
-            <div className="text-sm text-text-muted space-y-4">
-              <p>
-                We need to migrate our current session-based authentication to a robust JWT (JSON Web Token) implementation to support our upcoming microservices architecture.
-              </p>
-              <p className="font-bold text-white">Requirements:</p>
-              <ul className="list-disc pl-5 space-y-2">
-                <li>Implement Access Tokens (short-lived, 15m) and Refresh Tokens (long-lived, 7d).</li>
-                <li>Store Refresh Tokens securely (HttpOnly cookies).</li>
-                <li>Create middleware to validate tokens on protected routes.</li>
-                <li>Implement a blacklist mechanism for revoked tokens upon logout.</li>
-              </ul>
-              
-              <div className="bg-[#0B1120] border border-border rounded-lg p-4 font-mono text-xs text-[#A5C0F3] leading-relaxed overflow-x-auto mt-4">
-<pre><code>{`// Example JWT Payload
-{
-  "sub": "usr_9a8b7c6d",
-  "role": "admin",
-  "iat": 1716390000,
-  "exp": 1716390900
-}`}</code></pre>
-              </div>
-            </div>
+            {task.description ? (
+              <p className="text-sm text-text-muted leading-relaxed whitespace-pre-wrap">{task.description}</p>
+            ) : (
+              <p className="text-sm text-text-muted/40 italic">No description yet. Click Edit to add one.</p>
+            )}
           </div>
-
-          {/* Attachments */}
-          <div className="glass-panel p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Paperclip className="w-5 h-5 text-text-muted" /> Attachments
-              </h3>
-              <button className="text-sm font-semibold text-text-muted hover:text-white flex items-center gap-1 transition-colors">
-                <Plus className="w-4 h-4" /> Add File
-              </button>
-            </div>
-            <div className="flex items-center gap-4 p-4 border border-border rounded-lg bg-[#0B1120] hover:border-text-muted transition-colors cursor-pointer w-max pr-8">
-              <div className="w-10 h-10 bg-red-500 rounded flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-sm">
-                PDF
-              </div>
-              <div>
-                <p className="text-sm font-bold text-white">Security_Audit_v2.pdf</p>
-                <p className="text-xs text-text-muted mt-0.5">2.4 MB • Uploaded Yesterday</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Activity */}
-          <div className="glass-panel p-6">
-            <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-               <span className="text-text-muted">💬</span> Activity
-            </h3>
-            
-            <div className="space-y-6">
-              {/* Comment Input */}
-              <div className="flex gap-4">
-                <div className="w-8 h-8 rounded-full bg-surface-3 flex items-center justify-center shrink-0 border border-border overflow-hidden">
-                  <span className="text-xs font-bold text-white">M</span>
-                </div>
-                <div className="flex-1 bg-[#0B1120] border border-border rounded-lg p-3">
-                  <textarea 
-                    className="w-full bg-transparent text-sm text-white placeholder-text-muted focus:outline-none resize-none" 
-                    placeholder="Add a comment..."
-                    rows={2}
-                  />
-                  <div className="flex justify-end gap-2 mt-2">
-                    <button className="px-2 py-1 text-xs font-bold text-text-muted hover:text-white">B</button>
-                    <button className="px-2 py-1 text-xs font-bold text-text-muted hover:text-white">{'<>'}</button>
-                    <Button className="bg-[#A5C0F3] text-black hover:bg-[#93C5FD] font-semibold text-xs py-1.5 px-4 h-auto ml-2">Comment</Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Comment 1 */}
-              <div className="flex gap-4 pt-2">
-                <div className="w-8 h-8 rounded-full bg-surface-3 flex items-center justify-center shrink-0 border border-border overflow-hidden">
-                  <span className="text-xs font-bold text-white">S</span>
-                </div>
-                <div className="flex-1 border border-border rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-sm font-bold text-white">Sarah Jenkins</span>
-                    <span className="text-xs text-text-muted">2 hours ago</span>
-                  </div>
-                  <p className="text-sm text-text-muted">
-                    I've started reviewing the auth middleware logic. We need to ensure the token blacklist is performant enough for high-volume requests. Considering Redis for this.
-                  </p>
-                </div>
-              </div>
-
-              {/* Status Change */}
-              <div className="flex gap-4 items-center">
-                <div className="w-8 h-8 rounded-full border border-border flex items-center justify-center shrink-0">
-                  <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-b-[6px] border-b-text-muted" />
-                </div>
-                <p className="text-sm text-text-muted">
-                  <span className="font-bold text-white">Marcus Chen</span> changed status from <span className="text-text-muted">To Do</span> to <span className="text-emerald-400">In Progress</span>
-                  <span className="text-xs ml-2">Yesterday at 4:30 PM</span>
-                </p>
-              </div>
-
-            </div>
-          </div>
-
         </div>
 
-        {/* Right Column */}
+        {/* Right Column – Details */}
         <div className="space-y-6">
-          
-          {/* Details */}
           <div className="glass-panel">
             <div className="p-4 border-b border-border">
               <h3 className="font-bold text-white">Details</h3>
             </div>
             <div className="p-4 space-y-4">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-text-muted flex items-center gap-2">👤 Assignee</span>
+              <DetailRow label="👤 Assignee">
                 <span className="text-white font-medium flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full bg-surface-3 flex items-center justify-center text-[10px] font-bold">M</div>
-                  Marcus Chen
+                  {task.assigneeName ? (
+                    <>
+                      <div className="w-5 h-5 rounded-full bg-accent/20 flex items-center justify-center text-[10px] font-bold text-accent">
+                        {task.assigneeName[0].toUpperCase()}
+                      </div>
+                      {task.assigneeName}
+                    </>
+                  ) : (
+                    <span className="text-text-muted/50">Unassigned</span>
+                  )}
                 </span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-text-muted flex items-center gap-2">👥 Reporter</span>
-                <span className="text-white font-medium flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full bg-surface-3 flex items-center justify-center text-[10px] font-bold">E</div>
-                  Elena Rodriguez
+              </DetailRow>
+
+              <div className="w-full h-px bg-border/50" />
+
+              <DetailRow label="📅 Due Date">
+                <span className={`font-medium ${task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'DONE' ? 'text-red-400' : 'text-white'}`}>
+                  {fmt(task.dueDate)}
                 </span>
-              </div>
+              </DetailRow>
+
               <div className="w-full h-px bg-border/50" />
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-text-muted flex items-center gap-2">📅 Due Date</span>
-                <span className="text-white font-medium">Oct 24, 2024</span>
-              </div>
+
+              <DetailRow label="📁 Project">
+                <Link to={`/projects/${task.projectId}`} className="text-accent hover:underline font-medium">
+                  {task.projectName}
+                </Link>
+              </DetailRow>
+
               <div className="w-full h-px bg-border/50" />
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-text-muted flex items-center gap-2">📁 Project</span>
-                <span className="text-[#A5C0F3] hover:underline cursor-pointer font-medium">Core Platform v2</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-text-muted flex items-center gap-2">🏁 Milestone</span>
-                <span className="text-white font-medium">v2.1 Security Update</span>
-              </div>
+
+              <DetailRow label="🕒 Created">
+                <span className="text-white font-medium">{fmt(task.createdAt)}</span>
+              </DetailRow>
+
+              <DetailRow label="🔄 Updated">
+                <span className="text-white font-medium">{fmt(task.updatedAt)}</span>
+              </DetailRow>
             </div>
           </div>
 
-          {/* Time Tracking */}
-          <div className="glass-panel">
-            <div className="p-4 border-b border-border flex justify-between items-center">
-              <h3 className="font-bold text-white flex items-center gap-2"><Clock className="w-4 h-4 text-text-muted" /> Time Tracking</h3>
-              <Play className="w-4 h-4 text-text-muted cursor-pointer hover:text-white transition-colors" />
-            </div>
-            <div className="p-5">
-              <div className="h-1.5 w-full bg-surface-3 rounded-full overflow-hidden mb-3">
-                <div className="h-full bg-[#A5C0F3] rounded-full" style={{ width: '45%' }} />
-              </div>
-              <div className="flex justify-between items-center text-xs text-text-muted font-medium">
-                <span>4h 30m logged</span>
-                <span>10h estimated</span>
-              </div>
+          {/* Quick Status Change */}
+          <div className="glass-panel p-4">
+            <h3 className="font-bold text-white text-sm mb-3">Change Status</h3>
+            <div className="space-y-2">
+              {(Object.keys(STATUS_CONFIG) as TaskStatus[]).map((s) => {
+                const C = STATUS_CONFIG[s];
+                return (
+                  <button
+                    key={s}
+                    onClick={() => handleStatusChange(s)}
+                    className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm transition-colors ${
+                      task.status === s
+                        ? 'bg-surface-2 font-bold ' + C.color
+                        : 'text-text-muted hover:bg-surface-2 hover:text-white'
+                    }`}
+                  >
+                    {task.status === s ? <Check className="w-3.5 h-3.5" /> : <div className={`w-2 h-2 rounded-full ${C.dot}`} />}
+                    {C.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
-
         </div>
-
       </div>
+
+      {/* Edit Modal */}
+      <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title="Edit Task">
+        <form onSubmit={handleUpdate} className="space-y-4">
+          <Input label="Title" name="title" required defaultValue={task.title} />
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-text">Description</label>
+            <textarea
+              name="description"
+              defaultValue={task.description ?? ''}
+              className="w-full glass-panel rounded-xl px-4 py-2.5 text-text text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent placeholder:text-text-muted/50"
+              rows={4}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Select
+              label="Priority"
+              name="priority"
+              defaultValue={task.priority}
+              options={[
+                { value: 'LOW',      label: 'Low' },
+                { value: 'MEDIUM',   label: 'Medium' },
+                { value: 'HIGH',     label: 'High' },
+                { value: 'CRITICAL', label: 'Critical' },
+              ]}
+            />
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-text">Assignee</label>
+              <input
+                type="text"
+                name="assigneeName"
+                defaultValue={task.assigneeName ?? ''}
+                placeholder="Enter name"
+                className="w-full bg-surface border border-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+              />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-text">Due Date</label>
+            <input
+              type="date"
+              name="dueDate"
+              defaultValue={task.dueDate ?? ''}
+              className="w-full bg-surface border border-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+            />
+          </div>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button type="button" variant="ghost" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+            <Button type="submit" loading={isSaving}>Save Changes</Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Delete Confirm */}
+      <Modal isOpen={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} title="Delete Task">
+        <div className="flex flex-col items-center text-center gap-4 py-2">
+          <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center">
+            <AlertCircle className="w-6 h-6 text-red-400" />
+          </div>
+          <p className="text-white font-semibold">Delete "{task.title}"?</p>
+          <p className="text-sm text-text-muted">This action cannot be undone.</p>
+          <div className="flex gap-3 w-full pt-2">
+            <Button variant="ghost" className="flex-1" onClick={() => setShowDeleteConfirm(false)}>Cancel</Button>
+            <Button variant="danger" className="flex-1" loading={isDeleting} onClick={handleDelete}>
+              Delete Task
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  );
+}
+
+function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex justify-between items-center text-sm">
+      <span className="text-text-muted">{label}</span>
+      {children}
     </div>
   );
 }
