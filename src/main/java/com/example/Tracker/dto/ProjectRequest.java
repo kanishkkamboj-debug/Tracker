@@ -21,4 +21,7 @@ public class ProjectRequest {
 
     private LocalDate startDate;
     private LocalDate endDate;
+
+    @Size(max = 1000, message = "GitHub URL too long")
+    private String githubRepoUrl;
 }

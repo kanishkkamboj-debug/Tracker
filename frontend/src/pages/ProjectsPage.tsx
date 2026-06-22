@@ -72,6 +72,7 @@ export default function ProjectsPage() {
       status:      (fd.get('status') as any) || 'ACTIVE',
       startDate:   (fd.get('startDate') as string) || null,
       endDate:     (fd.get('endDate') as string) || null,
+      githubRepoUrl: (fd.get('githubRepoUrl') as string) || undefined,
     };
     try {
       const res = await projectsApi.create(payload);
@@ -298,6 +299,15 @@ export default function ProjectsPage() {
                 className="w-full bg-surface border border-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-text">GitHub Repository URL (Optional)</label>
+            <input
+              type="url"
+              name="githubRepoUrl"
+              placeholder="https://github.com/owner/repo"
+              className="w-full bg-surface border border-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+            />
           </div>
           <div className="flex justify-end gap-3 pt-4">
             <Button type="button" variant="ghost" onClick={() => setIsCreateOpen(false)}>Cancel</Button>

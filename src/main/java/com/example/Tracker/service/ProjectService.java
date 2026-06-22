@@ -62,6 +62,7 @@ public class ProjectService {
                 .status(request.getStatus() != null ? request.getStatus() : ProjectStatus.ACTIVE)
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
+                .githubRepoUrl(request.getGithubRepoUrl())
                 .workspace(workspace)
                 .build();
 
@@ -89,6 +90,7 @@ public class ProjectService {
         if (request.getStatus() != null) project.setStatus(request.getStatus());
         project.setStartDate(request.getStartDate());
         project.setEndDate(request.getEndDate());
+        project.setGithubRepoUrl(request.getGithubRepoUrl());
         project.setUpdatedAt(LocalDateTime.now());
 
         @SuppressWarnings("null")
@@ -180,6 +182,7 @@ public class ProjectService {
                 .ownerId(project.getWorkspace().getOwner().getId())
                 .ownerName(project.getWorkspace().getOwner().getName())
                 .taskCount(project.getTasks().size())
+                .githubRepoUrl(project.getGithubRepoUrl())
                 .createdAt(project.getCreatedAt())
                 .updatedAt(project.getUpdatedAt())
                 .build();

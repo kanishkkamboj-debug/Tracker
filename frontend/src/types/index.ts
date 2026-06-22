@@ -30,6 +30,7 @@ export interface Project {
   ownerId: number;
   ownerName: string;
   taskCount: number;
+  githubRepoUrl?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -40,6 +41,7 @@ export interface ProjectRequest {
   status: ProjectStatus;
   startDate: string | null;
   endDate: string | null;
+  githubRepoUrl?: string;
 }
 
 // ─── Task ─────────────────────────────────────────────────────────────────────

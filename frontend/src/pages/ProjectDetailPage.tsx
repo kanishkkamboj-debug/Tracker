@@ -15,6 +15,8 @@ import { useToast } from '@/components/ui/ToastProvider';
 import KanbanColumn from '@/components/kanban/KanbanColumn';
 import KanbanCard from '@/components/kanban/KanbanCard';
 import ProjectTeamModal from '@/components/kanban/ProjectTeamModal';
+import GithubCommits from '@/components/kanban/GithubCommits';
+import { Github } from 'lucide-react';
 
 const COLUMNS: { id: TaskStatus; title: string }[] = [
   { id: 'TODO', title: 'To Do' },
@@ -38,6 +40,7 @@ export default function ProjectDetailPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isTeamOpen, setIsTeamOpen] = useState(false);
+  const [isGithubOpen, setIsGithubOpen] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -209,6 +212,12 @@ export default function ProjectDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          {project.githubRepoUrl && (
+            <Button onClick={() => setIsGithubOpen(true)} variant="secondary" className="gap-2 bg-surface-2 border-border text-white hover:bg-surface-3">
+              <Github className="w-5 h-5" />
+              Commits
+            </Button>
+          )}
           <Button onClick={() => setIsTeamOpen(true)} variant="secondary" className="gap-2 bg-surface-2 border-border text-white hover:bg-surface-3">
             <Users className="w-5 h-5" />
             Team
@@ -298,6 +307,14 @@ export default function ProjectDetailPage() {
         onClose={() => setIsTeamOpen(false)}
         projectId={Number(id)}
       />
+
+      <Modal isOpen={isGithubOpen} onClose={() => setIsGithubOpen(false)} title="GitHub Repository Integration" size="lg">
+        {project.githubRepoUrl && (
+          <div className="max-h-[60vh] overflow-y-auto">
+            <GithubCommits repoUrl={project.githubRepoUrl} />
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

@@ -34,6 +34,9 @@ public class Project {
     private LocalDate startDate;
     private LocalDate endDate;
 
+    @Column(length = 1000)
+    private String githubRepoUrl;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "workspace_id", nullable = false)
     private Workspace workspace;

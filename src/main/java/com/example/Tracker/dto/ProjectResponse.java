@@ -23,6 +23,7 @@ public class ProjectResponse {
     private Long ownerId;
     private String ownerName;
     private int taskCount;
+    private String githubRepoUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
