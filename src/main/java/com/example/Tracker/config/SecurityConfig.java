@@ -47,6 +47,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .anyRequest().authenticated()
             )
+            .exceptionHandling(exc -> exc
+                .authenticationEntryPoint((request, response, authException) -> 
+                    response.sendError(org.springframework.http.HttpStatus.UNAUTHORIZED.value(), "Unauthorized"))
+            )
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 

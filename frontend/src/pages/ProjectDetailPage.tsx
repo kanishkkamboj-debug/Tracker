@@ -191,18 +191,18 @@ export default function ProjectDetailPage() {
   return (
     <div className="h-[calc(100vh-64px-48px)] flex flex-col max-w-[1600px] mx-auto pb-6">
       {/* Header */}
-      <div className="mb-6 flex items-start justify-between shrink-0">
+      <div className="mb-6 flex items-start justify-between shrink-0 relative z-10">
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/projects')}
-            className="p-2 -ml-2 text-text-muted hover:text-text rounded-xl hover:bg-bg-surface2 transition-colors focus-visible:ring-2 focus-visible:ring-accent outline-none"
+            className="p-2 -ml-2 text-text-muted hover:text-white rounded-xl hover:bg-white/10 transition-colors focus-visible:ring-2 focus-visible:ring-accent outline-none"
             aria-label="Back to projects"
           >
             <ArrowLeft className="w-6 h-6" />
           </button>
           <div>
-            <h1 className="text-3xl font-display font-bold text-text">{project.name}</h1>
-            <p className="text-text-muted mt-1">{project.description}</p>
+            <h1 className="text-4xl font-display font-bold text-white drop-shadow-sm">{project.name}</h1>
+            <p className="text-lg text-text-muted mt-1 font-medium">{project.description}</p>
           </div>
         </div>
         <Button onClick={() => setIsCreateOpen(true)}>
@@ -222,7 +222,7 @@ export default function ProjectDetailPage() {
             {COLUMNS.map((col) => {
               const columnTasks = tasks.filter((t) => t.status === col.id);
               return (
-                <KanbanColumn key={col.id} id={col.id} title={col.title} count={columnTasks.length}>
+                <KanbanColumn key={col.id} id={col.id} title={col.title} count={columnTasks.length} onAddTask={() => setIsCreateOpen(true)}>
                   <SortableContext items={columnTasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
                     {columnTasks.map((task) => (
                       <KanbanCard key={task.id} task={task} onDelete={handleDeleteTask} onMove={handleMoveTask} />

@@ -1,69 +1,77 @@
-import { NavLink, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { NavLink } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
-import { LayoutDashboard, FolderKanban, LogOut, Zap } from 'lucide-react';
+import { 
+  LayoutDashboard, 
+  Folder, 
+  ClipboardList, 
+  Layout, 
+  Users, 
+  BarChart2, 
+  Settings, 
+  HelpCircle, 
+  LogOut,
+  GitMerge
+} from 'lucide-react';
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/projects',  label: 'Projects',  icon: FolderKanban   },
+  { to: '/projects',  label: 'Projects',  icon: Folder },
+  { to: '/tasks',     label: 'Tasks',     icon: ClipboardList },
+  { to: '/kanban',    label: 'Kanban',    icon: Layout },
+  { to: '/members',   label: 'Members',   icon: Users },
+  { to: '/analytics', label: 'Analytics', icon: BarChart2 },
+  { to: '/settings',  label: 'Settings',  icon: Settings },
 ];
 
 export default function Sidebar() {
   const logout = useAuthStore((s) => s.logout);
-  const user   = useAuthStore((s) => s.user);
 
   return (
-    <aside className="w-64 flex-shrink-0 glass-panel border-r border-white/10 flex flex-col z-20">
+    <aside className="w-[260px] flex-shrink-0 bg-surface border-r border-border flex flex-col z-20 h-full overflow-y-auto">
       {/* Logo */}
-      <div className="flex items-center gap-3 p-6 border-b border-white/10">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-accent-purple flex items-center justify-center shadow-glow">
-          <Zap className="w-4 h-4 text-white" />
+      <div className="flex items-center gap-3 p-6 mb-2">
+        <div className="w-8 h-8 rounded-md bg-[#A5C0F3] flex items-center justify-center shrink-0">
+          <span className="text-black font-bold text-sm tracking-tighter">TF</span>
         </div>
-        <span className="font-display font-bold text-xl text-white tracking-wide">TrackFlow</span>
+        <div className="flex flex-col">
+          <span className="font-serif font-bold text-2xl text-white tracking-wide leading-none">TrackFlow</span>
+          <span className="text-[10px] font-medium text-text-muted mt-1 uppercase tracking-widest">Productivity Suite</span>
+        </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2 mt-2">
+      <nav className="flex-1 px-3 space-y-1">
         {navItems.map(({ to, label, icon: Icon }) => (
           <NavLink key={to} to={to}>
             {({ isActive }) => (
-              <motion.div
-                whileHover={{ x: 2 }}
-                whileTap={{ scale: 0.98 }}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer ${
+              <div
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors cursor-pointer ${
                   isActive
-                    ? 'bg-accent-purple/20 text-accent-purple font-semibold'
-                    : 'text-text-muted hover:text-white hover:bg-white/5'
+                    ? 'bg-surface-3 text-white font-medium'
+                    : 'text-text-muted hover:text-white hover:bg-surface-2'
                 }`}
               >
-                <Icon className="w-4 h-4 flex-shrink-0" strokeWidth={isActive ? 2.5 : 2} />
-                <span className="text-sm tracking-wide">{label}</span>
-              </motion.div>
+                <Icon className="w-5 h-5 flex-shrink-0" strokeWidth={2} />
+                <span className="text-sm">{label}</span>
+              </div>
             )}
           </NavLink>
         ))}
       </nav>
 
-      {/* User + Logout */}
-      <div className="p-4 border-t border-white/10">
-        <div className="glass-panel rounded-xl p-3 flex flex-col gap-4 border border-white/5 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-accent-purple to-accent-pink flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-sm">
-              {user?.name?.[0]?.toUpperCase() ?? 'U'}
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-white truncate">{user?.name}</p>
-              <p className="text-xs text-text-muted/80 truncate">{user?.email}</p>
-            </div>
-          </div>
-          <button
-            onClick={logout}
-            className="flex items-center justify-center gap-2 w-full px-4 py-2 text-xs font-semibold uppercase tracking-wider text-text-muted hover:text-red-400 bg-black/20 hover:bg-red-500/10 rounded-lg transition-colors border border-transparent hover:border-red-500/20 outline-none"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            Sign out
-          </button>
-        </div>
+      {/* Bottom Actions */}
+      <div className="p-3 space-y-1 border-t border-border mt-auto">
+        <button className="flex items-center gap-3 px-3 py-2.5 rounded-md text-text-muted hover:text-white hover:bg-surface-2 transition-colors w-full text-left">
+          <HelpCircle className="w-5 h-5" strokeWidth={2} />
+          <span className="text-sm">Help</span>
+        </button>
+        <button 
+          onClick={logout}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-md text-text-muted hover:text-white hover:bg-surface-2 transition-colors w-full text-left"
+        >
+          <LogOut className="w-5 h-5" strokeWidth={2} />
+          <span className="text-sm">Logout</span>
+        </button>
       </div>
     </aside>
   );

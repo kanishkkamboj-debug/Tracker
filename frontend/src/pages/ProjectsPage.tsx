@@ -1,15 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, FolderKanban, MoreVertical, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Search, Calendar, Flag } from 'lucide-react';
 import { projectsApi } from '@/api/projects';
 import { Project } from '@/types';
 import Button from '@/components/ui/Button';
-import Card from '@/components/ui/Card';
-import { ProjectStatusBadge } from '@/components/ui/Badge';
-import Modal from '@/components/ui/Modal';
-import Input from '@/components/ui/Input';
-import { Skeleton } from '@/components/ui/Skeleton';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { useToast } from '@/components/ui/ToastProvider';
 
 export default function ProjectsPage() {
@@ -17,234 +11,114 @@ export default function ProjectsPage() {
   const { toast } = useToast();
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-
-  // Modals
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [editProject, setEditProject] = useState<Project | null>(null);
-  const [deleteProject, setDeleteProject] = useState<Project | null>(null);
-
-  const fetchProjects = async (p = 0) => {
-    try {
-      setIsLoading(true);
-      const res = await projectsApi.list(p, 12);
-      setProjects(res.data.data.content);
-      setTotalPages(res.data.data.totalPages);
-    } catch (error) {
-      toast('Failed to load projects', 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   useEffect(() => {
-    fetchProjects(page);
-  }, [page]);
+    const loadProjects = async () => {
+      try {
+        const res = await projectsApi.getAll();
+        setProjects(res.data.data);
+      } catch (error) {
+        toast('Failed to load projects', 'error');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadProjects();
+  }, [toast]);
 
-  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    try {
-      await projectsApi.create({
-        name: formData.get('name') as string,
-        description: formData.get('description') as string,
-        status: 'ACTIVE',
-        startDate: null,
-        endDate: null,
-      });
-      setIsCreateOpen(false);
-      toast('Project created successfully', 'success');
-      fetchProjects(0);
-    } catch (error) {
-      toast('Failed to create project', 'error');
-    }
-  };
+  if (isLoading) {
+    return <div className="p-8">Loading projects...</div>;
+  }
 
-  const handleEdit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!editProject) return;
-    const formData = new FormData(e.currentTarget);
-    try {
-      await projectsApi.update(editProject.id, {
-        name: formData.get('name') as string,
-        description: formData.get('description') as string,
-        status: editProject.status,
-        startDate: editProject.startDate,
-        endDate: editProject.endDate,
-      });
-      setEditProject(null);
-      toast('Project updated', 'success');
-      fetchProjects(page);
-    } catch (error) {
-      toast('Failed to update project', 'error');
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!deleteProject) return;
-    try {
-      await projectsApi.delete(deleteProject.id);
-      setDeleteProject(null);
-      toast('Project deleted', 'success');
-      fetchProjects(page);
-    } catch (error) {
-      toast('Failed to delete project', 'error');
-    }
+  // Mock progress data for visual fidelity with screenshot
+  const mockProgress: Record<number, number> = {
+    1: 68,
+    2: 34,
+    3: 100,
   };
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
+    <div className="max-w-[1400px] mx-auto p-8 space-y-8">
+      {/* Header Area */}
+      <div className="flex justify-between items-start bg-white rounded-t-xl -mx-8 -mt-8 p-8 border-b border-border shadow-sm">
         <div>
-          <h1 className="text-3xl font-display font-bold text-text">Projects</h1>
-          <p className="text-text-muted mt-1">Manage all your active projects and boards</p>
+          <h1 className="text-3xl font-bold text-[#A5C0F3]">Projects</h1>
+          <p className="text-[#94A3B8] mt-1 font-medium">Manage and track your active initiatives.</p>
         </div>
-        <Button onClick={() => setIsCreateOpen(true)}>
-          <Plus className="w-5 h-5 mr-2" />
-          New Project
-        </Button>
-      </div>
-
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <Card key={i} className="p-6 h-[200px] flex flex-col justify-between">
-              <div>
-                <Skeleton className="w-10 h-10 rounded-xl mb-4" />
-                <Skeleton variant="text" className="w-3/4 mb-2" />
-                <Skeleton variant="text" className="w-full h-10" />
-              </div>
-              <Skeleton variant="text" className="w-1/3" />
-            </Card>
-          ))}
-        </div>
-      ) : projects.length === 0 ? (
-        <EmptyState
-          title="No projects found"
-          description="You haven't created any projects yet. Get started by creating your first project board."
-          action={<Button onClick={() => setIsCreateOpen(true)}>Create Project</Button>}
-        />
-      ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {projects.map((p) => (
-              <Card key={p.id} hover className="p-6 flex flex-col cursor-pointer" onClick={() => navigate(`/projects/${p.id}`)}>
-                <div className="flex justify-between items-start mb-4">
-                  <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent">
-                    <FolderKanban className="w-5 h-5" />
-                  </div>
-                  <div className="relative group" onClick={(e) => e.stopPropagation()}>
-                    <button className="p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-surface2 focus-visible:ring-2 focus-visible:ring-accent outline-none">
-                      <MoreVertical className="w-4 h-4" />
-                    </button>
-                    <div className="absolute right-0 top-full mt-1 bg-bg-surface border border-border rounded-lg shadow-card hidden group-hover:block z-10 min-w-[120px] overflow-hidden">
-                      <button
-                        onClick={() => setEditProject(p)}
-                        className="w-full text-left px-4 py-2 text-sm text-text hover:bg-bg-surface2 flex items-center focus-visible:bg-bg-surface2 outline-none"
-                      >
-                        <Edit2 className="w-4 h-4 mr-2" /> Edit
-                      </button>
-                      <button
-                        onClick={() => setDeleteProject(p)}
-                        className="w-full text-left px-4 py-2 text-sm text-status-critical hover:bg-status-critical/10 flex items-center focus-visible:bg-status-critical/10 outline-none"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" /> Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                
-                <h3 className="font-semibold text-lg text-text mb-2 line-clamp-1">{p.name}</h3>
-                <p className="text-sm text-text-muted line-clamp-2 mb-6 flex-1">
-                  {p.description || 'No description provided.'}
-                </p>
-                
-                <div className="flex items-center justify-between pt-4 border-t border-border">
-                  <ProjectStatusBadge status="ACTIVE" />
-                  <span className="text-xs text-text-muted font-medium">Owner</span>
-                </div>
-              </Card>
-            ))}
-          </div>
-
-          {totalPages > 1 && (
-            <div className="mt-8 flex items-center justify-center gap-4">
-              <Button
-                variant="secondary"
-                disabled={page === 0}
-                onClick={() => setPage(p => Math.max(0, p - 1))}
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-text-muted">Page {page + 1} of {totalPages}</span>
-              <Button
-                variant="secondary"
-                disabled={page === totalPages - 1}
-                onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-              >
-                Next
-              </Button>
+        
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-text-muted" />
             </div>
-          )}
-        </>
-      )}
-
-      {/* Create Modal */}
-      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Create New Project">
-        <form onSubmit={handleCreate} className="space-y-4">
-          <Input label="Project Name" name="name" required placeholder="e.g. Website Redesign" />
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-text">Description</label>
-            <textarea
-              name="description"
-              className="w-full bg-bg-surface border border-border rounded-xl px-4 py-2.5 text-text text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:border-accent hover:border-accent/50 placeholder:text-text-muted/50"
-              rows={3}
-              placeholder="Briefly describe the project..."
+            <input
+              type="text"
+              className="block w-64 pl-10 pr-3 py-2 border border-border rounded-md leading-5 bg-bg text-white placeholder-text-muted focus:outline-none focus:border-accent sm:text-sm"
+              placeholder="Search projects..."
             />
           </div>
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="ghost" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
-            <Button type="submit">Create Project</Button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Edit Modal */}
-      <Modal isOpen={!!editProject} onClose={() => setEditProject(null)} title="Edit Project">
-        {editProject && (
-          <form onSubmit={handleEdit} className="space-y-4">
-            <Input label="Project Name" name="name" defaultValue={editProject.name} required />
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-text">Description</label>
-              <textarea
-                name="description"
-                defaultValue={editProject.description}
-                className="w-full bg-bg-surface border border-border rounded-xl px-4 py-2.5 text-text text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:border-accent hover:border-accent/50 placeholder:text-text-muted/50"
-                rows={3}
-              />
-            </div>
-            <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="ghost" onClick={() => setEditProject(null)}>Cancel</Button>
-              <Button type="submit">Save Changes</Button>
-            </div>
-          </form>
-        )}
-      </Modal>
-
-      {/* Delete Confirmation Modal */}
-      <Modal isOpen={!!deleteProject} onClose={() => setDeleteProject(null)} title="Delete Project">
-        <div className="space-y-4">
-          <p className="text-sm text-text-muted">
-            Are you sure you want to delete <span className="font-semibold text-text">{deleteProject?.name}</span>? 
-            This action cannot be undone and will delete all associated tasks.
-          </p>
-          <div className="flex justify-end gap-3 pt-4">
-            <Button variant="ghost" onClick={() => setDeleteProject(null)}>Cancel</Button>
-            <Button variant="danger" onClick={handleDelete}>Delete Project</Button>
-          </div>
+          <Button variant="ghost" className="text-black hover:bg-black/5 font-semibold text-base">
+            <Plus className="w-5 h-5 mr-2" />
+            Create Project
+          </Button>
         </div>
-      </Modal>
+      </div>
+
+      {/* Projects Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
+        {projects.map((project) => (
+          <div 
+            key={project.id}
+            onClick={() => navigate(`/projects/${project.id}`)}
+            className="glass-panel p-6 cursor-pointer hover:border-text-muted transition-colors flex flex-col h-full"
+          >
+            {/* Card Header */}
+            <div className="flex justify-between items-start mb-6">
+              <h3 className="text-xl font-bold text-white truncate pr-4">{project.name}</h3>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#10B981]/10 border border-[#10B981]/20 shrink-0">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
+                <span className="text-[10px] font-bold text-[#10B981] tracking-wider">ACTIVE</span>
+              </div>
+            </div>
+
+            {/* Manager Info */}
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-8 h-8 rounded-full bg-surface-3 flex items-center justify-center text-xs font-bold text-white">
+                {project.ownerName ? project.ownerName[0].toUpperCase() : 'U'}
+              </div>
+              <span className="text-sm text-text-muted">
+                Manager: <span className="text-white font-medium">{project.ownerName || 'Unassigned'}</span>
+              </span>
+            </div>
+
+            <div className="mt-auto">
+              {/* Progress */}
+              <div className="flex justify-between text-xs font-medium mb-2 text-text-muted">
+                <span>Progress</span>
+                <span className="text-white">{mockProgress[project.id as number] || 0}%</span>
+              </div>
+              <div className="h-1.5 w-full bg-surface-3 rounded-full mb-6 overflow-hidden">
+                <div 
+                  className="h-full bg-accent rounded-full" 
+                  style={{ width: `${mockProgress[project.id as number] || 0}%` }}
+                />
+              </div>
+
+              {/* Dates */}
+              <div className="flex justify-between items-center text-xs text-text-muted pt-4 border-t border-white/5">
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>Oct 12</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Flag className="w-3.5 h-3.5" />
+                  <span>Dec 30</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

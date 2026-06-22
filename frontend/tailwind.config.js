@@ -7,6 +7,7 @@ export default {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         display: ['Space Grotesk', 'Inter', 'sans-serif'],
+        serif: ['Merriweather', 'Georgia', 'serif'],
       },
       colors: {
         bg: {

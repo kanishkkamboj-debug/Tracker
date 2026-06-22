@@ -11,6 +11,12 @@ const RegisterPage      = lazy(() => import('@/pages/RegisterPage'));
 const DashboardPage     = lazy(() => import('@/pages/DashboardPage'));
 const ProjectsPage      = lazy(() => import('@/pages/ProjectsPage'));
 const ProjectDetailPage = lazy(() => import('@/pages/ProjectDetailPage'));
+const TasksPage         = lazy(() => import('@/pages/TasksPage'));
+const KanbanPage        = lazy(() => import('@/pages/KanbanPage'));
+const MembersPage       = lazy(() => import('@/pages/MembersPage'));
+const AnalyticsPage     = lazy(() => import('@/pages/AnalyticsPage'));
+const SettingsPage      = lazy(() => import('@/pages/SettingsPage'));
+const TaskDetailsPage   = lazy(() => import('@/pages/TaskDetailsPage'));
 
 // ─── Protected route wrapper ─────────────────────────────────────────────────
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -54,6 +60,12 @@ export default function AppRouter() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/projects/:id" element={<ProjectDetailPage />} />
+            <Route path="/tasks" element={<TasksPage />} />
+            <Route path="/tasks/:id" element={<TaskDetailsPage />} />
+            <Route path="/kanban" element={<KanbanPage />} />
+            <Route path="/members" element={<MembersPage />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Route>
 
           {/* Catch-all */}

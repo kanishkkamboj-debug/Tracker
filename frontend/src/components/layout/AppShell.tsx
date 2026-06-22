@@ -9,8 +9,9 @@ export default function AppShell() {
   return (
     <div className="flex h-screen bg-transparent overflow-hidden">
       <Sidebar />
-      <div className="flex flex-col flex-1 min-w-0">
+      <div className="flex flex-col flex-1 min-w-0 relative z-10">
         <Navbar />
+
         <main className="flex-1 overflow-y-auto p-6 relative">
           <AnimatePresence mode="wait">
             <motion.div

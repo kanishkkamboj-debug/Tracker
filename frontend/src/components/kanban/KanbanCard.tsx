@@ -1,8 +1,9 @@
+import { useState, useRef, useEffect } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { MoreVertical, Trash2, ArrowRight } from 'lucide-react';
+import { MoreHorizontal, Calendar, ChevronsUp, Trash2, ArrowRight, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Task, TaskStatus } from '@/types';
-import { motion } from 'framer-motion';
 
 interface KanbanCardProps {
   task: Task;
@@ -10,27 +11,27 @@ interface KanbanCardProps {
   onMove?: (id: number, status: TaskStatus) => void;
 }
 
-const PRIORITY_COLORS = {
-  LOW: 'bg-white/5 text-slate-300 border-white/10',
-  MEDIUM: 'bg-accent/20 text-accent border-accent/30 shadow-[0_0_10px_rgba(0,242,254,0.2)]',
-  HIGH: 'bg-accent-pink/20 text-accent-pink border-accent-pink/30 shadow-[0_0_10px_rgba(240,147,251,0.2)]',
-  CRITICAL: 'bg-red-500/20 text-red-400 border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.2)] animate-pulse',
+const PRIORITY_STYLES = {
+  LOW:      'text-slate-400',
+  MEDIUM:   'text-blue-400',
+  HIGH:     'text-orange-400',
+  CRITICAL: 'text-red-400',
 };
 
-const STATUS_OPTIONS: { id: TaskStatus; label: string }[] = [
-  { id: 'TODO', label: 'To Do' },
-  { id: 'IN_PROGRESS', label: 'In Progress' },
-  { id: 'REVIEW', label: 'Review' },
-  { id: 'DONE', label: 'Done' },
+const STATUS_MOVES: { label: string; value: TaskStatus }[] = [
+  { label: 'To Do',       value: 'TODO' },
+  { label: 'In Progress', value: 'IN_PROGRESS' },
+  { label: 'Review',      value: 'REVIEW' },
+  { label: 'Done',        value: 'DONE' },
 ];
 
 export default function KanbanCard({ task, onDelete, onMove }: KanbanCardProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ 
+  const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
-    transition: {
-      duration: 250,
-      easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
-    }
   });
 
   const style = {
@@ -38,75 +39,114 @@ export default function KanbanCard({ task, onDelete, onMove }: KanbanCardProps) 
     transition,
   };
 
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [menuOpen]);
+
+  const taskId = `TASK-${task.id}`;
+
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`touch-none ${isDragging ? 'z-50 opacity-80 scale-105 rotate-2 kanban-card-dragging' : ''}`}
+      className={`touch-none pb-3 ${isDragging ? 'z-50 opacity-40' : ''}`}
     >
-      <motion.div 
-        whileHover={{ scale: 1.02, y: -2 }}
-        className="p-5 group cursor-grab active:cursor-grabbing relative glass-panel rounded-xl border border-white/10 hover:border-accent/50 hover:shadow-glow-sm transition-all duration-300 overflow-hidden"
-      >
-        {/* Subtle glass reflection */}
-        <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+      <div className="p-4 cursor-grab active:cursor-grabbing bg-bg border border-border rounded-lg hover:border-text-muted/40 transition-colors flex flex-col gap-3 shadow-sm group relative">
 
-        <div className="flex justify-between items-start mb-3 relative z-10">
-          {/* Drag handle */}
-          <div className="flex-1 outline-none" {...attributes} {...listeners} tabIndex={0} aria-label={`Drag task ${task.title}`}>
-            <h4 className="font-bold text-white text-base leading-snug pr-6 tracking-wide drop-shadow-sm">{task.title}</h4>
+        {/* Top Row */}
+        <div className="flex justify-between items-center" {...attributes} {...listeners}>
+          <span className="text-[10px] font-bold text-text-muted bg-surface-2 px-2 py-0.5 rounded uppercase tracking-wider">
+            {taskId}
+          </span>
+          <div className={`flex items-center gap-1 text-[10px] font-bold tracking-wider uppercase ${PRIORITY_STYLES[task.priority]}`}>
+            <ChevronsUp className="w-3 h-3" />
+            {task.priority}
           </div>
-          
-          {/* Menu Dropdown */}
-          <div className="relative group/menu flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-            <button
-              className="p-1 -mt-1 -mr-1 text-text-muted hover:text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 hover:bg-black/40 border border-transparent hover:border-white/10"
-            >
-              <MoreVertical className="w-4 h-4" />
-            </button>
-            <div className="absolute right-0 top-full mt-2 bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl shadow-card hidden group-hover/menu:block focus-within:block z-20 w-44 overflow-hidden">
-              {onMove && (
-                <div className="border-b border-white/10 py-1">
-                  <div className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-text-muted/70">Move to</div>
-                  {STATUS_OPTIONS.map(opt => opt.id !== task.status && (
+        </div>
+
+        {/* Title */}
+        <h4
+          className="font-bold text-white text-sm leading-snug cursor-pointer hover:text-accent transition-colors"
+          onClick={() => navigate(`/tasks/${task.id}`)}
+          {...{ onPointerDown: (e: React.PointerEvent) => e.stopPropagation() }}
+        >
+          {task.title}
+        </h4>
+
+        {/* Project label */}
+        {task.projectName && (
+          <span className="text-[10px] font-medium text-teal-400 bg-teal-400/10 border border-teal-400/20 px-2 py-0.5 rounded self-start">
+            {task.projectName}
+          </span>
+        )}
+
+        {/* Bottom Row */}
+        <div className="flex justify-between items-center mt-1 pt-3 border-t border-border/50">
+          <div className="flex items-center gap-1.5 text-xs text-text-muted">
+            <Calendar className="w-3.5 h-3.5" />
+            <span>{task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No due date'}</span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <div className="w-6 h-6 rounded-full bg-surface-3 flex items-center justify-center text-[10px] font-bold text-white border border-border">
+              {task.assigneeName ? task.assigneeName[0].toUpperCase() : '?'}
+            </div>
+
+            {/* Context menu */}
+            <div className="relative" ref={menuRef}>
+              <button
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => { e.stopPropagation(); setMenuOpen((o) => !o); }}
+                className="w-6 h-6 flex items-center justify-center rounded text-text-muted hover:text-white hover:bg-surface-2 transition-colors"
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </button>
+
+              {menuOpen && (
+                <div className="absolute right-0 bottom-8 z-50 min-w-[160px] bg-surface border border-border rounded-xl shadow-xl overflow-hidden">
+                  <button
+                    className="flex items-center gap-2 w-full px-3 py-2 text-xs text-white hover:bg-surface-2 transition-colors"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => { e.stopPropagation(); navigate(`/tasks/${task.id}`); setMenuOpen(false); }}
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 text-text-muted" /> View Details
+                  </button>
+
+                  <div className="border-t border-border my-1" />
+                  <p className="px-3 py-1 text-[10px] font-bold text-text-muted uppercase tracking-wider">Move to</p>
+                  {STATUS_MOVES.filter((s) => s.value !== task.status).map((s) => (
                     <button
-                      key={opt.id}
-                      onClick={() => onMove(task.id, opt.id)}
-                      className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 flex items-center justify-between transition-colors outline-none"
+                      key={s.value}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-xs text-white hover:bg-surface-2 transition-colors"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => { e.stopPropagation(); onMove?.(task.id, s.value); setMenuOpen(false); }}
                     >
-                      {opt.label} <ArrowRight className="w-3 h-3 opacity-50" />
+                      <ArrowRight className="w-3.5 h-3.5 text-text-muted" /> {s.label}
                     </button>
                   ))}
+
+                  <div className="border-t border-border my-1" />
+                  <button
+                    className="flex items-center gap-2 w-full px-3 py-2 text-xs text-red-400 hover:bg-red-500/10 transition-colors"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => { e.stopPropagation(); onDelete(task.id); setMenuOpen(false); }}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Delete
+                  </button>
                 </div>
               )}
-              <div className="py-1">
-                <button
-                  onClick={() => onDelete(task.id)}
-                  className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/20 hover:text-red-300 flex items-center transition-colors font-medium outline-none"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" /> Delete Task
-                </button>
-              </div>
             </div>
           </div>
         </div>
-
-        <div {...attributes} {...listeners} className="flex-1 relative z-10 outline-none">
-          <p className="text-xs text-text-muted/80 line-clamp-2 mb-5 leading-relaxed font-medium">
-            {task.description || 'No description provided.'}
-          </p>
-          <div className="flex items-center justify-between mt-auto">
-            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-md border uppercase tracking-widest ${PRIORITY_COLORS[task.priority]}`}>
-              {task.priority}
-            </span>
-            <div className="flex -space-x-2 relative z-0">
-               {/* Decorative avatars for 'FAANG' feel */}
-               <div className="w-6 h-6 rounded-full bg-gradient-to-br from-accent to-accent-purple border border-white/20 shadow-glow-sm" />
-               <div className="w-6 h-6 rounded-full bg-gradient-to-br from-accent-purple to-accent-pink border border-white/20 shadow-glow-sm" />
-            </div>
-          </div>
-        </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

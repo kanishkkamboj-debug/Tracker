@@ -1,87 +1,65 @@
 /* ─── Google Fonts ─────────────────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:wght@400;700;900&display=swap');
 
 /* ─── Tailwind Directives ───────────────────────────────────────────────────── */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../tailwind.config.js";
 
-/* ─── Design Tokens (Dark Futuristic Glassmorphic) ─────────────────────────── */
+/* ─── Design Tokens (Classic SaaS Dark Mode) ─────────────────────────── */
 @layer base {
   :root, .dark {
-    --color-bg:         #050505;
-    --color-surface:    rgba(15, 15, 20, 0.6);
-    --color-surface-2:  rgba(25, 25, 30, 0.6);
-    --color-surface-3:  rgba(35, 35, 40, 0.6);
-    --color-border:     rgba(255, 255, 255, 0.08);
+    --color-bg:         #0B1120;
+    --color-surface:    #131B2F;
+    --color-surface-2:  #1E293B;
+    --color-surface-3:  #334155;
+    --color-border:     #1E293B;
     
-    --color-accent:     #00f2fe;
-    --color-accent-hover: #4facfe;
-    --color-accent-purple: #4facfe;
-    --color-accent-pink: #f093fb;
+    --color-accent:     #A5C0F3;
+    --color-accent-hover: #93C5FD;
+    --color-accent-purple: #A5C0F3;
+    --color-accent-pink: #A5C0F3;
     
-    --color-text:       #f8fafc;
-    --color-text-muted: #94a3b8;
+    --color-text:       #F8FAFC;
+    --color-text-muted: #94A3B8;
     --color-text-dim:   #475569;
     
-    --radius-card:      1rem;
-    --shadow-card:      0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    --shadow-glow:      0 0 24px rgba(0, 242, 254, 0.3);
-    --shadow-glow-sm:   0 0 12px rgba(0, 242, 254, 0.2);
+    --radius-card:      0.5rem;
+    --shadow-card:      0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-glow:      none;
+    --shadow-glow-sm:   none;
   }
 }
 
 /* ─── Base ───────────────────────────────────────────────────────────────────── */
 @layer base {
   *, *::before, *::after { box-sizing: border-box; }
-
   html { scroll-behavior: smooth; }
-
   body {
     margin: 0;
     background-color: var(--color-bg);
-    background-image: 
-      radial-gradient(circle at 15% 50%, rgba(0, 242, 254, 0.03), transparent 25%),
-      radial-gradient(circle at 85% 30%, rgba(79, 172, 254, 0.03), transparent 25%);
-    background-attachment: fixed;
     color: var(--color-text);
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     min-height: 100vh;
   }
-
   #root { min-height: 100vh; }
 }
 
-/* ─── Scrollbar ─────────────────────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
-
-/* ─── Kanban drag ghost ─────────────────────────────────────────────────────── */
-.kanban-card-dragging {
-  opacity: 0.5;
-  transform: scale(0.97) rotate(2deg);
-  box-shadow: var(--shadow-glow);
-}
-
-/* ─── Selection ─────────────────────────────────────────────────────────────── */
-::selection { background: rgba(0,242,254,0.4); color: #fff; }
-
-/* ─── Glassmorphism Helpers ─────────────────────────────────────────────────── */
+/* ─── Utilities ─────────────────────────────────────────────────────────────── */
 .glass-panel {
   background: var(--color-surface);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-card);
+  border-radius: var(--radius-card);
 }
 
-/* ─── Reduced motion ────────────────────────────────────────────────────────── */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
+.grid-bg {
+  background-size: 40px 40px;
+  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
 }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
