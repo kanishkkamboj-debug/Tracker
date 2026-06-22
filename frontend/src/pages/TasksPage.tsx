@@ -6,6 +6,8 @@ import { projectsApi } from '@/api/projects';
 import { Task, TaskStatus, TaskPriority, Project } from '@/types';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/ToastProvider';
+import GlobalCreateTaskModal from '@/components/kanban/GlobalCreateTaskModal';
+import Button from '@/components/ui/Button';
 
 const STATUS_CONFIG: Record<TaskStatus, { label: string; icon: React.ElementType; color: string; bg: string }> = {
   TODO:        { label: 'To Do',       icon: Circle,       color: 'text-text-muted',  bg: 'bg-surface-2' },
@@ -26,6 +28,7 @@ export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<TaskStatus | 'ALL'>('ALL');
   const [filterPriority, setFilterPriority] = useState<TaskPriority | 'ALL'>('ALL');
@@ -51,6 +54,19 @@ export default function TasksPage() {
     };
     load();
   }, [toast]);
+
+  const loadTasks = async () => {
+    try {
+      const projRes = await projectsApi.list(0, 100);
+      const allProjects = projRes.data.data.content;
+      const taskArrays = await Promise.all(
+        allProjects.map((p) => projectsApi.getTasks(p.id).then((r) => r.data.data))
+      );
+      setTasks(taskArrays.flat());
+    } catch {
+      // Handle error implicitly
+    }
+  };
 
   const handleDelete = async (id: number) => {
     try {
@@ -78,10 +94,13 @@ export default function TasksPage() {
           <h1 className="text-3xl font-display font-bold text-white">Tasks</h1>
           <p className="text-text-muted mt-1">All tasks across your projects</p>
         </div>
-        <div className="flex items-center gap-2 text-sm text-text-muted">
+        <div className="flex items-center gap-3 text-sm text-text-muted">
           <span className="bg-surface-2 border border-border px-3 py-1.5 rounded-md font-medium">
             {filtered.length} task{filtered.length !== 1 ? 's' : ''}
           </span>
+          <Button onClick={() => setIsTaskModalOpen(true)} className="gap-2">
+            <Plus className="w-4 h-4" /> New Task
+          </Button>
         </div>
       </div>
 
@@ -180,6 +199,12 @@ export default function TasksPage() {
           })}
         </div>
       )}
+
+      <GlobalCreateTaskModal
+        isOpen={isTaskModalOpen}
+        onClose={() => setIsTaskModalOpen(false)}
+        onTaskCreated={loadTasks}
+      />
     </div>
   );
 }

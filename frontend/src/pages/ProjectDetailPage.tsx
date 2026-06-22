@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Plus, ArrowLeft } from 'lucide-react';
+import { Plus, ArrowLeft, Users } from 'lucide-react';
 import { DndContext, DragEndEvent, closestCorners, DragOverlay, defaultDropAnimationSideEffects } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { projectsApi } from '@/api/projects';
@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/ToastProvider';
 import KanbanColumn from '@/components/kanban/KanbanColumn';
 import KanbanCard from '@/components/kanban/KanbanCard';
+import ProjectTeamModal from '@/components/kanban/ProjectTeamModal';
 
 const COLUMNS: { id: TaskStatus; title: string }[] = [
   { id: 'TODO', title: 'To Do' },
@@ -36,6 +37,7 @@ export default function ProjectDetailPage() {
   // Modals
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [isTeamOpen, setIsTeamOpen] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -204,11 +206,18 @@ export default function ProjectDetailPage() {
             <h1 className="text-4xl font-display font-bold text-white drop-shadow-sm">{project.name}</h1>
             <p className="text-lg text-text-muted mt-1 font-medium">{project.description}</p>
           </div>
+          </div>
         </div>
-        <Button onClick={() => setIsCreateOpen(true)}>
-          <Plus className="w-5 h-5 mr-2" />
-          Add Task
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button onClick={() => setIsTeamOpen(true)} variant="secondary" className="gap-2 bg-surface-2 border-border text-white hover:bg-surface-3">
+            <Users className="w-5 h-5" />
+            Team
+          </Button>
+          <Button onClick={() => setIsCreateOpen(true)}>
+            <Plus className="w-5 h-5 mr-2" />
+            Add Task
+          </Button>
+        </div>
       </div>
 
       {/* Kanban Board */}
@@ -283,6 +292,12 @@ export default function ProjectDetailPage() {
           </div>
         </form>
       </Modal>
+
+      <ProjectTeamModal 
+        isOpen={isTeamOpen}
+        onClose={() => setIsTeamOpen(false)}
+        projectId={Number(id)}
+      />
     </div>
   );
 }

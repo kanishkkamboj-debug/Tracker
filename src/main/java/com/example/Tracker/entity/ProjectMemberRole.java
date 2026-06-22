@@ -4,5 +4,6 @@ public enum ProjectMemberRole {
     OWNER,
     MANAGER,
     DEVELOPER,
-    TESTER
+    TESTER,
+    MEMBER
 }

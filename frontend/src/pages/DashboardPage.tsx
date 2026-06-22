@@ -8,12 +8,14 @@ import { motion } from 'framer-motion';
 import { CheckCircle, AlertTriangle, Folder, ClipboardList, TrendingUp, MoreHorizontal, MessageSquare, Plus } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { useAuthStore } from '@/stores/authStore';
+import GlobalCreateTaskModal from '@/components/kanban/GlobalCreateTaskModal';
 
 export default function DashboardPage() {
   const { toast } = useToast();
   const user = useAuthStore((s) => s.user);
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -59,7 +61,10 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold text-white tracking-tight">Dashboard Overview</h1>
           <p className="text-text-muted mt-2">Welcome back. Here's what's happening across your workspace.</p>
         </div>
-        <Button className="bg-[#A5C0F3] text-black hover:bg-[#93C5FD] font-semibold flex items-center gap-2">
+        <Button 
+          onClick={() => setIsTaskModalOpen(true)}
+          className="bg-[#A5C0F3] text-black hover:bg-[#93C5FD] font-semibold flex items-center gap-2"
+        >
           <Plus className="w-4 h-4" /> New Task
         </Button>
       </div>
@@ -217,6 +222,10 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      <GlobalCreateTaskModal 
+        isOpen={isTaskModalOpen} 
+        onClose={() => setIsTaskModalOpen(false)} 
+      />
     </div>
   );
 }

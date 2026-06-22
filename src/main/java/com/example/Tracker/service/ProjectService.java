@@ -8,11 +8,15 @@ import com.example.Tracker.entity.ProjectStatus;
 import com.example.Tracker.entity.Task;
 import com.example.Tracker.entity.User;
 import com.example.Tracker.entity.Workspace;
+import com.example.Tracker.entity.ProjectMember;
+import com.example.Tracker.entity.ProjectMemberRole;
+import com.example.Tracker.dto.MemberResponse;
 import com.example.Tracker.exception.ResourceNotFoundException;
 import com.example.Tracker.exception.UnauthorizedException;
 import com.example.Tracker.repository.ProjectRepository;
 import com.example.Tracker.repository.TaskRepository;
 import com.example.Tracker.repository.WorkspaceRepository;
+import com.example.Tracker.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -31,6 +35,7 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final TaskRepository taskRepository;
     private final WorkspaceRepository workspaceRepository;
+    private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
     public Page<ProjectResponse> getProjects(User user, int page, int size) {
@@ -97,6 +102,54 @@ public class ProjectService {
                 .orElseThrow(() -> new ResourceNotFoundException("Project", projectId));
         assertOwner(user, project);
         projectRepository.delete(project);
+    }
+
+    @Transactional
+    public void addMember(User user, Long projectId, Long userId) {
+        Project project = projectRepository.findWithWorkspaceById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project", projectId));
+        assertOwner(user, project);
+
+        User memberToAdd = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        boolean alreadyMember = project.getMembers().stream()
+                .anyMatch(pm -> pm.getUser().getId().equals(userId));
+        if (alreadyMember) return;
+
+        ProjectMember pm = ProjectMember.builder()
+                .project(project)
+                .user(memberToAdd)
+                .projectRole(ProjectMemberRole.MEMBER)
+                .build();
+        project.getMembers().add(pm);
+        projectRepository.save(project);
+    }
+
+    @Transactional
+    public void removeMember(User user, Long projectId, Long userId) {
+        Project project = projectRepository.findWithWorkspaceById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project", projectId));
+        assertOwner(user, project);
+
+        project.getMembers().removeIf(pm -> pm.getUser().getId().equals(userId));
+        projectRepository.save(project);
+    }
+
+    @Transactional(readOnly = true)
+    public List<MemberResponse> getMembers(User user, Long projectId) {
+        Project project = projectRepository.findWithWorkspaceById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project", projectId));
+        
+        return project.getMembers().stream().map(pm -> {
+            User u = pm.getUser();
+            return MemberResponse.builder()
+                    .id(u.getId())
+                    .name(u.getName())
+                    .email(u.getEmail())
+                    .role(pm.getProjectRole().name())
+                    .build();
+        }).toList();
     }
 
     @Transactional(readOnly = true)

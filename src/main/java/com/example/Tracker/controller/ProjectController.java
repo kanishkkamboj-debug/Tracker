@@ -67,4 +67,29 @@ public class ProjectController {
             @PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(projectService.getProjectTasks(user, id)));
     }
+
+    @GetMapping("/{id}/members")
+    public ResponseEntity<ApiResponse<List<MemberResponse>>> getProjectMembers(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(projectService.getMembers(user, id)));
+    }
+
+    @PostMapping("/{id}/members")
+    public ResponseEntity<ApiResponse<Void>> addProjectMember(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long id,
+            @RequestParam Long userId) {
+        projectService.addMember(user, id, userId);
+        return ResponseEntity.ok(ApiResponse.success("Member added", null));
+    }
+
+    @DeleteMapping("/{id}/members/{userId}")
+    public ResponseEntity<ApiResponse<Void>> removeProjectMember(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long id,
+            @PathVariable Long userId) {
+        projectService.removeMember(user, id, userId);
+        return ResponseEntity.ok(ApiResponse.success("Member removed", null));
+    }
 }

@@ -23,4 +23,13 @@ export const projectsApi = {
 
   getTasks: (id: number) =>
     axiosInstance.get<ApiResponse<Task[]>>(`/projects/${id}/tasks`),
+
+  getMembers: (id: number) =>
+    axiosInstance.get<ApiResponse<any[]>>(`/projects/${id}/members`),
+
+  addMember: (id: number, userId: number) =>
+    axiosInstance.post<ApiResponse<void>>(`/projects/${id}/members?userId=${userId}`),
+
+  removeMember: (id: number, userId: number) =>
+    axiosInstance.delete<ApiResponse<void>>(`/projects/${id}/members/${userId}`),
 };

@@ -46,22 +46,15 @@ function ScrollToTop() {
 }
 
 export default function AppRouter() {
-  const { user, checkAuth, isLoading } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const fetchSettings = useSettingsStore(s => s.fetchSettings);
 
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
-
-  useEffect(() => {
-    if (user) {
+    if (user && isAuthenticated) {
       fetchSettings();
     }
-  }, [user, fetchSettings]);
-
-  if (isLoading) {
-    return <PageFallback />;
-  }
+  }, [user, isAuthenticated, fetchSettings]);
 
   return (
     <BrowserRouter>
