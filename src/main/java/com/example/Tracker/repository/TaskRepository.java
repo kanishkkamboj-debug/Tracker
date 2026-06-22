@@ -45,6 +45,19 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT t.priority, COUNT(t) FROM Task t WHERE t.project.workspace.owner.id = :ownerId GROUP BY t.priority")
     List<Object[]> countByPriorityForOwner(@Param("ownerId") Long ownerId);
 
+    // --- Project Specific Dashboard Queries ---
+    long countByProjectId(Long projectId);
+    long countByProjectIdAndStatus(Long projectId, TaskStatus status);
+
+    @Query("SELECT t FROM Task t WHERE t.project.id = :projectId ORDER BY t.updatedAt DESC LIMIT 5")
+    List<Task> findTop5ByProjectIdOrderByUpdatedAtDesc(@Param("projectId") Long projectId);
+
+    @Query("SELECT t.status, COUNT(t) FROM Task t WHERE t.project.id = :projectId GROUP BY t.status")
+    List<Object[]> countByStatusForProject(@Param("projectId") Long projectId);
+
+    @Query("SELECT t.priority, COUNT(t) FROM Task t WHERE t.project.id = :projectId GROUP BY t.priority")
+    List<Object[]> countByPriorityForProject(@Param("projectId") Long projectId);
+
     // Count tasks assigned to a specific user
     long countByAssigneeId(Long assigneeId);
 

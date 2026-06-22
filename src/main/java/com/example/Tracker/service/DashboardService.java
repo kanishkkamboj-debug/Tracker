@@ -25,33 +25,60 @@ public class DashboardService {
     private final TaskRepository taskRepository;
 
     @Transactional(readOnly = true)
-    public DashboardSummaryResponse getSummary(User user) {
+    public DashboardSummaryResponse getSummary(User user, Long projectId) {
         Long ownerId = user.getId();
 
-        // Project counts
-        long totalProjects  = projectRepository.countByWorkspaceOwnerId(ownerId);
-        long activeProjects = projectRepository.countByWorkspaceOwnerIdAndStatus(ownerId, ProjectStatus.ACTIVE);
-        long completedProjects = projectRepository.countByWorkspaceOwnerIdAndStatus(ownerId, ProjectStatus.COMPLETED);
-        long onHoldProjects = projectRepository.countByWorkspaceOwnerIdAndStatus(ownerId, ProjectStatus.ON_HOLD);
+        long totalProjects, activeProjects, completedProjects, onHoldProjects;
+        long totalTasks, completedTasks, pendingTasks;
+        List<Object[]> statusCounts, priorityCounts;
+        List<Task> topTasks;
 
-        // Task counts
-        long totalTasks     = taskRepository.countByProjectWorkspaceOwnerId(ownerId);
-        long completedTasks = taskRepository.countByProjectWorkspaceOwnerIdAndStatus(ownerId, TaskStatus.DONE);
-        long pendingTasks   = totalTasks - completedTasks;
+        if (projectId != null) {
+            // Verify ownership
+            if (!projectRepository.existsByIdAndWorkspaceOwnerId(projectId, ownerId)) {
+                throw new RuntimeException("Project not found or not owned by user");
+            }
+            
+            // Project counts don't make sense for a single project, so return 0 or 1
+            totalProjects = 1;
+            activeProjects = 0; completedProjects = 0; onHoldProjects = 0;
+            // Or ideally we fetch the project to see its status, but 0 is fine for chart filters
+
+            totalTasks = taskRepository.countByProjectId(projectId);
+            completedTasks = taskRepository.countByProjectIdAndStatus(projectId, TaskStatus.DONE);
+            pendingTasks = totalTasks - completedTasks;
+
+            statusCounts = taskRepository.countByStatusForProject(projectId);
+            priorityCounts = taskRepository.countByPriorityForProject(projectId);
+            topTasks = taskRepository.findTop5ByProjectIdOrderByUpdatedAtDesc(projectId);
+        } else {
+            // Global Workspace stats
+            totalProjects  = projectRepository.countByWorkspaceOwnerId(ownerId);
+            activeProjects = projectRepository.countByWorkspaceOwnerIdAndStatus(ownerId, ProjectStatus.ACTIVE);
+            completedProjects = projectRepository.countByWorkspaceOwnerIdAndStatus(ownerId, ProjectStatus.COMPLETED);
+            onHoldProjects = projectRepository.countByWorkspaceOwnerIdAndStatus(ownerId, ProjectStatus.ON_HOLD);
+
+            totalTasks     = taskRepository.countByProjectWorkspaceOwnerId(ownerId);
+            completedTasks = taskRepository.countByProjectWorkspaceOwnerIdAndStatus(ownerId, TaskStatus.DONE);
+            pendingTasks   = totalTasks - completedTasks;
+
+            statusCounts = taskRepository.countByStatusForOwner(ownerId);
+            priorityCounts = taskRepository.countByPriorityForOwner(ownerId);
+            topTasks = taskRepository.findTop5ByProjectWorkspaceOwnerIdOrderByUpdatedAtDesc(ownerId);
+        }
 
         // Tasks by status (for chart)
         Map<String, Long> tasksByStatus = new LinkedHashMap<>();
-        for (Object[] row : taskRepository.countByStatusForOwner(ownerId)) {
+        for (Object[] row : statusCounts) {
             tasksByStatus.put(((TaskStatus) row[0]).name(), (Long) row[1]);
         }
-        // Ensure all statuses present
         for (TaskStatus s : TaskStatus.values()) {
             tasksByStatus.putIfAbsent(s.name(), 0L);
         }
 
         // Tasks by priority (for chart)
         Map<String, Long> tasksByPriority = new LinkedHashMap<>();
-        for (Object[] row : taskRepository.countByPriorityForOwner(ownerId)) {
+        for (Object[] row : priorityCounts) {
             tasksByPriority.put(((TaskPriority) row[0]).name(), (Long) row[1]);
         }
         for (TaskPriority p : TaskPriority.values()) {
@@ -59,9 +86,7 @@ public class DashboardService {
         }
 
         // Recent tasks
-        List<TaskResponse> recentTasks = taskRepository
-                .findTop5ByProjectWorkspaceOwnerIdOrderByUpdatedAtDesc(ownerId)
-                .stream()
+        List<TaskResponse> recentTasks = topTasks.stream()
                 .map(this::taskToResponse)
                 .toList();
 
