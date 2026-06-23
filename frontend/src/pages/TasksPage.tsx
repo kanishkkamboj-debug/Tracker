@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Filter, CheckCircle2, Clock, AlertCircle, Circle } from 'lucide-react';
+import { Search, Filter, CheckCircle2, Clock, AlertCircle, Circle, Plus } from 'lucide-react';
 import { tasksApi } from '@/api/tasks';
 import { projectsApi } from '@/api/projects';
 import { Task, TaskStatus, TaskPriority, Project } from '@/types';

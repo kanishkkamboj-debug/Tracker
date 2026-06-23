@@ -209,7 +209,6 @@ export default function ProjectDetailPage() {
             <h1 className="text-4xl font-display font-bold text-white drop-shadow-sm">{project.name}</h1>
             <p className="text-lg text-text-muted mt-1 font-medium">{project.description}</p>
           </div>
-          </div>
         </div>
         <div className="flex items-center gap-3">
           {project.githubRepoUrl && (

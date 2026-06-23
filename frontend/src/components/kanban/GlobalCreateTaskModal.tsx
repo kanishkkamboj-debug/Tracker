@@ -69,7 +69,7 @@ export default function GlobalCreateTaskModal({ isOpen, onClose, onTaskCreated, 
           defaultValue={defaultProjectId || ''}
           options={[
             { value: '', label: 'Select a project...' },
-            ...projects.map(p => ({ value: p.id, label: p.name }))
+            ...projects.map(p => ({ value: p.id.toString(), label: p.name }))
           ]}
         />
         <Input label="Task Title" name="title" required placeholder="e.g. Design Landing Page" autoFocus />

@@ -15,6 +15,8 @@ export interface UserSettings {
   bio: string;
   location: string;
   githubUrl: string;
+  linkedinUrl: string;
+  twitterUrl: string;
   avatarUrl: string;
   name?: string;
   email?: string;

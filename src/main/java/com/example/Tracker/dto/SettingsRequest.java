@@ -17,6 +17,8 @@ public class SettingsRequest {
     private String bio;
     private String location;
     private String githubUrl;
+    private String linkedinUrl;
+    private String twitterUrl;
 
     // Settings
     private String theme;

@@ -103,23 +103,41 @@ export default function MembersPage() {
 
                 <div className="px-5 pb-5">
                   {/* Avatar */}
-                  <div className={`-mt-8 w-16 h-16 rounded-2xl ${avatarBg} flex items-center justify-center text-2xl font-bold text-white border-4 border-surface shadow-lg`}>
-                    {initials}
+                  <div className={`-mt-8 w-16 h-16 rounded-2xl ${avatarBg} flex items-center justify-center text-2xl font-bold text-white border-4 border-surface shadow-lg overflow-hidden`}>
+                    {member.avatarUrl ? (
+                      <img src={member.avatarUrl} alt={member.name} className="w-full h-full object-cover" />
+                    ) : (
+                      initials
+                    )}
                   </div>
 
                   {/* Name & Email */}
                   <div className="mt-3">
                     <h3 className="text-white font-bold text-base leading-tight">{member.name}</h3>
-                    <div className="flex items-center gap-1.5 mt-1">
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      {member.jobTitle && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-accent bg-accent/10 border border-accent/20 px-2 py-0.5 rounded">
+                          {member.jobTitle}
+                        </span>
+                      )}
+                      {member.role && !member.jobTitle && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted bg-surface-2 px-2 py-0.5 rounded">
+                          {member.role}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-2">
                       <Mail className="w-3 h-3 text-text-muted flex-shrink-0" />
                       <p className="text-text-muted text-xs truncate">{member.email}</p>
                     </div>
-                    {member.role && (
-                      <span className="mt-1.5 inline-block text-[10px] font-bold uppercase tracking-wider text-text-muted bg-surface-2 px-2 py-0.5 rounded">
-                        {member.role}
-                      </span>
-                    )}
                   </div>
+
+                  {/* Bio */}
+                  {member.bio && (
+                    <p className="mt-3 text-xs text-text-muted line-clamp-2 leading-relaxed">
+                      {member.bio}
+                    </p>
+                  )}
 
                   {/* Stats */}
                   <div className="mt-4 grid grid-cols-3 gap-2 text-center">
@@ -151,26 +169,41 @@ export default function MembersPage() {
                     </div>
                   </div>
 
-                  {/* Joined */}
-                  {member.joinedAt && (
-                    <p className="mt-3 text-[10px] text-text-muted/60">Joined {member.joinedAt}</p>
-                  )}
+                  {/* Joined & Location */}
+                  <div className="mt-3 flex items-center justify-between text-[10px] text-text-muted/60">
+                    <span>{member.joinedAt ? `Joined ${member.joinedAt}` : ''}</span>
+                    <span>{member.location || ''}</span>
+                  </div>
 
                   {/* Social links */}
                   <div className="mt-4 flex items-center gap-2">
-                    {[
-                      { Icon: Linkedin, label: 'LinkedIn' },
-                      { Icon: Github,   label: 'GitHub' },
-                      { Icon: Twitter,  label: 'Twitter' },
-                    ].map(({ Icon, label }) => (
-                      <button
-                        key={label}
-                        aria-label={label}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-surface-2 border border-border text-text-muted hover:text-white hover:border-text-muted/40 hover:bg-surface-3 transition-colors"
-                      >
-                        <Icon className="w-3.5 h-3.5" />
+                    {member.linkedinUrl ? (
+                      <a href={member.linkedinUrl} target="_blank" rel="noreferrer" aria-label="LinkedIn" className="w-8 h-8 flex items-center justify-center rounded-lg bg-surface-2 border border-border text-text-muted hover:text-white hover:border-text-muted/40 hover:bg-surface-3 transition-colors">
+                        <Linkedin className="w-3.5 h-3.5" />
+                      </a>
+                    ) : (
+                      <button disabled aria-label="LinkedIn" className="w-8 h-8 flex items-center justify-center rounded-lg bg-surface-2 border border-border text-text-muted/30 cursor-not-allowed">
+                        <Linkedin className="w-3.5 h-3.5" />
                       </button>
-                    ))}
+                    )}
+                    {member.githubUrl ? (
+                      <a href={member.githubUrl} target="_blank" rel="noreferrer" aria-label="GitHub" className="w-8 h-8 flex items-center justify-center rounded-lg bg-surface-2 border border-border text-text-muted hover:text-white hover:border-text-muted/40 hover:bg-surface-3 transition-colors">
+                        <Github className="w-3.5 h-3.5" />
+                      </a>
+                    ) : (
+                      <button disabled aria-label="GitHub" className="w-8 h-8 flex items-center justify-center rounded-lg bg-surface-2 border border-border text-text-muted/30 cursor-not-allowed">
+                        <Github className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    {member.twitterUrl ? (
+                      <a href={member.twitterUrl} target="_blank" rel="noreferrer" aria-label="Twitter" className="w-8 h-8 flex items-center justify-center rounded-lg bg-surface-2 border border-border text-text-muted hover:text-white hover:border-text-muted/40 hover:bg-surface-3 transition-colors">
+                        <Twitter className="w-3.5 h-3.5" />
+                      </a>
+                    ) : (
+                      <button disabled aria-label="Twitter" className="w-8 h-8 flex items-center justify-center rounded-lg bg-surface-2 border border-border text-text-muted/30 cursor-not-allowed">
+                        <Twitter className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                     <a
                       href={`mailto:${member.email}`}
                       aria-label="Email"

@@ -16,6 +16,7 @@
     "@react-three/fiber": "^8.18.0",
     "@types/three": "^0.177.0",
     "axios": "^1.9.0",
+    "date-fns": "^4.4.0",
     "framer-motion": "^12.18.0",
     "i18next": "^26.3.1",
     "i18next-browser-languagedetector": "^8.2.1",

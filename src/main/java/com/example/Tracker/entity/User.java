@@ -54,6 +54,12 @@ public class User implements UserDetails {
     @Column(length = 255)
     private String githubUrl;
 
+    @Column(length = 255)
+    private String linkedinUrl;
+
+    @Column(length = 255)
+    private String twitterUrl;
+
     // ─── UserDetails impl ─────────────────────────────────────────────────────
 
     @Override

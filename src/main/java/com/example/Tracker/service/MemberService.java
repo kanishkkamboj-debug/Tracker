@@ -44,6 +44,13 @@ public class MemberService {
                     .projectCount((int) projects)
                     .role(u.getRole().name())
                     .joinedAt(u.getCreatedAt().format(fmt))
+                    .avatarUrl(u.getAvatarUrl())
+                    .jobTitle(u.getJobTitle())
+                    .bio(u.getBio())
+                    .location(u.getLocation())
+                    .githubUrl(u.getGithubUrl())
+                    .linkedinUrl(u.getLinkedinUrl())
+                    .twitterUrl(u.getTwitterUrl())
                     .build());
         }
         return results;

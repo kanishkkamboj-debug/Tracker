@@ -6,10 +6,18 @@ interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   children: React.ReactNode;
 }
 
-export default function Modal({ isOpen, onClose, title, children }: ModalProps) {
+const sizeClasses = {
+  sm: 'max-w-sm',
+  md: 'max-w-md',
+  lg: 'max-w-lg',
+  xl: 'max-w-2xl',
+};
+
+export default function Modal({ isOpen, onClose, title, size = 'md', children }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
@@ -90,7 +98,7 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-bg-surface border border-border w-full max-w-lg rounded-xl shadow-card p-6 pointer-events-auto"
+              className={`bg-bg-surface border border-border w-full ${sizeClasses[size]} rounded-xl shadow-card p-6 pointer-events-auto`}
             >
               <div className="flex justify-between items-center mb-6">
                 <h2 id={titleId} className="text-xl font-display font-semibold text-text">{title}</h2>

@@ -18,6 +18,13 @@ export interface MemberItem {
   projectCount: number;
   role: string;
   joinedAt: string;
+  avatarUrl?: string;
+  jobTitle?: string;
+  bio?: string;
+  location?: string;
+  githubUrl?: string;
+  linkedinUrl?: string;
+  twitterUrl?: string;
 }
 
 export const notificationsApi = {

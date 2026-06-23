@@ -2,12 +2,14 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
+import DynamicBackground from './DynamicBackground';
 
 export default function AppShell() {
   const location = useLocation();
 
   return (
     <div className="flex h-screen bg-transparent overflow-hidden">
+      <DynamicBackground />
       <Sidebar />
       <div className="flex flex-col flex-1 min-w-0 relative z-10">
         <Navbar />

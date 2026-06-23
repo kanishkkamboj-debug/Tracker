@@ -16,7 +16,9 @@ export default function SettingsPage() {
     jobTitle: '',
     bio: '',
     location: '',
-    githubUrl: ''
+    githubUrl: '',
+    linkedinUrl: '',
+    twitterUrl: ''
   });
 
   useEffect(() => {
@@ -29,7 +31,9 @@ export default function SettingsPage() {
         jobTitle: settings.jobTitle || '',
         bio: settings.bio || '',
         location: settings.location || '',
-        githubUrl: settings.githubUrl || ''
+        githubUrl: settings.githubUrl || '',
+        linkedinUrl: settings.linkedinUrl || '',
+        twitterUrl: settings.twitterUrl || ''
       });
     }
   }, [settings]);
@@ -63,8 +67,8 @@ export default function SettingsPage() {
         <div className="flex justify-between items-start">
           <div className="flex gap-6 w-full">
             <div className="w-24 h-24 rounded-xl overflow-hidden bg-surface-3 flex items-center justify-center border border-border shadow-md shrink-0">
-              {settings.avatarUrl || user?.avatarUrl ? (
-                <img src={settings.avatarUrl || user?.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+              {settings.avatarUrl ? (
+                <img src={settings.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
               ) : (
                 <span className="text-3xl font-bold text-white">
                   {user?.name?.[0]?.toUpperCase() ?? 'A'}
@@ -86,18 +90,40 @@ export default function SettingsPage() {
                   onChange={e => setEditForm({...editForm, bio: e.target.value})}
                   placeholder="Bio"
                 />
-                <div className="flex gap-4">
-                  <input 
-                    className="bg-surface-2 border border-border rounded px-3 py-1 text-white flex-1 text-sm"
-                    value={editForm.location}
-                    onChange={e => setEditForm({...editForm, location: e.target.value})}
-                    placeholder="Location"
-                  />
-                  <input 
-                    className="bg-surface-2 border border-border rounded px-3 py-1 text-white flex-1 text-sm"
+                <input 
+                  className="bg-surface-2 border border-border rounded px-3 py-1 text-white w-full text-sm"
+                  value={editForm.location}
+                  onChange={e => setEditForm({...editForm, location: e.target.value})}
+                  placeholder="Location"
+                />
+                <div className="space-y-1.5 mt-4">
+                  <label className="text-sm font-medium text-text-muted">GitHub Profile URL</label>
+                  <input
+                    type="url"
+                    className="w-full bg-surface-2 border border-border rounded-lg px-4 py-2.5 text-text focus:border-accent outline-none"
                     value={editForm.githubUrl}
                     onChange={e => setEditForm({...editForm, githubUrl: e.target.value})}
-                    placeholder="GitHub URL"
+                    placeholder="https://github.com/username"
+                  />
+                </div>
+                <div className="space-y-1.5 mt-4">
+                  <label className="text-sm font-medium text-text-muted">LinkedIn Profile URL</label>
+                  <input
+                    type="url"
+                    className="w-full bg-surface-2 border border-border rounded-lg px-4 py-2.5 text-text focus:border-accent outline-none"
+                    value={editForm.linkedinUrl}
+                    onChange={e => setEditForm({...editForm, linkedinUrl: e.target.value})}
+                    placeholder="https://linkedin.com/in/username"
+                  />
+                </div>
+                <div className="space-y-1.5 mt-4">
+                  <label className="text-sm font-medium text-text-muted">Twitter Profile URL</label>
+                  <input
+                    type="url"
+                    className="w-full bg-surface-2 border border-border rounded-lg px-4 py-2.5 text-text focus:border-accent outline-none"
+                    value={editForm.twitterUrl}
+                    onChange={e => setEditForm({...editForm, twitterUrl: e.target.value})}
+                    placeholder="https://twitter.com/username"
                   />
                 </div>
               </div>

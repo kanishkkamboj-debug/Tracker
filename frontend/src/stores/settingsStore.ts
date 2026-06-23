@@ -25,6 +25,8 @@ const defaultSettings: UserSettings = {
   bio: 'Leading frontend architecture',
   location: 'San Francisco, CA',
   githubUrl: 'github.com/amercer',
+  linkedinUrl: 'linkedin.com/in/amercer',
+  twitterUrl: 'twitter.com/amercer',
   avatarUrl: ''
 };
 

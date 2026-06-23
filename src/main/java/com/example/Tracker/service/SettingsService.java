@@ -33,6 +33,8 @@ public class SettingsService {
         if (request.getBio() != null) user.setBio(request.getBio());
         if (request.getLocation() != null) user.setLocation(request.getLocation());
         if (request.getGithubUrl() != null) user.setGithubUrl(request.getGithubUrl());
+        if (request.getLinkedinUrl() != null) user.setLinkedinUrl(request.getLinkedinUrl());
+        if (request.getTwitterUrl() != null) user.setTwitterUrl(request.getTwitterUrl());
         
         userRepository.save(user);
 
@@ -78,6 +80,8 @@ public class SettingsService {
                 .bio(user.getBio())
                 .location(user.getLocation())
                 .githubUrl(user.getGithubUrl())
+                .linkedinUrl(user.getLinkedinUrl())
+                .twitterUrl(user.getTwitterUrl())
                 .settingsId(settings.getId())
                 .theme(settings.getTheme())
                 .language(settings.getLanguage())

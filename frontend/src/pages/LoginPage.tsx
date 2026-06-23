@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, LayoutGrid, Key, Building, ArrowRight, GitMerge } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import Button from '@/components/ui/Button';
+import { authApi } from '@/api/auth';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('demo@example.com');
@@ -16,7 +17,8 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await login(email, password);
+      const res = await authApi.login({email, password});
+      login(res.data.data);
       navigate('/dashboard');
     } catch (error) {
       console.error('Login failed', error);
@@ -95,7 +97,7 @@ export default function LoginPage() {
 
           <Button 
             type="submit" 
-            isLoading={isLoading}
+            loading={isLoading}
             className="w-full py-2.5 bg-[#A5C0F3] hover:bg-[#93C5FD] text-black font-semibold rounded-md flex justify-center items-center"
           >
             Log In <ArrowRight className="w-4 h-4 ml-2" />

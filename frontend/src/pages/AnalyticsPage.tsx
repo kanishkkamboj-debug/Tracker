@@ -5,7 +5,7 @@ import Button from '@/components/ui/Button';
 import { dashboardApi } from '@/api/dashboard';
 import { projectsApi } from '@/api/projects';
 import type { DashboardSummary, Project } from '@/types';
-import toast from 'react-hot-toast';
+import { useToast } from '@/components/ui/ToastProvider';
 
 const STATUS_COLORS: Record<string, string> = {
   TODO: '#94a3b8',
@@ -22,6 +22,7 @@ const PRIORITY_COLORS: Record<string, string> = {
 };
 
 export default function AnalyticsPage() {
+  const { toast } = useToast();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<number | undefined>(undefined);
