@@ -40,14 +40,14 @@ public class ProjectController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ProjectResponse>> getProject(
             @AuthenticationPrincipal User user,
-            @PathVariable Long id) {
+            @PathVariable String id) {           // Long → String
         return ResponseEntity.ok(ApiResponse.success(projectService.getProject(user, id)));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<ProjectResponse>> updateProject(
             @AuthenticationPrincipal User user,
-            @PathVariable Long id,
+            @PathVariable String id,             // Long → String
             @Valid @RequestBody ProjectRequest request) {
         return ResponseEntity.ok(ApiResponse.success("Project updated",
                 projectService.updateProject(user, id, request)));
@@ -56,7 +56,7 @@ public class ProjectController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteProject(
             @AuthenticationPrincipal User user,
-            @PathVariable Long id) {
+            @PathVariable String id) {           // Long → String
         projectService.deleteProject(user, id);
         return ResponseEntity.ok(ApiResponse.success("Project deleted", null));
     }
@@ -64,22 +64,22 @@ public class ProjectController {
     @GetMapping("/{id}/tasks")
     public ResponseEntity<ApiResponse<List<TaskResponse>>> getProjectTasks(
             @AuthenticationPrincipal User user,
-            @PathVariable Long id) {
+            @PathVariable String id) {           // Long → String
         return ResponseEntity.ok(ApiResponse.success(projectService.getProjectTasks(user, id)));
     }
 
     @GetMapping("/{id}/members")
     public ResponseEntity<ApiResponse<List<MemberResponse>>> getProjectMembers(
             @AuthenticationPrincipal User user,
-            @PathVariable Long id) {
+            @PathVariable String id) {           // Long → String
         return ResponseEntity.ok(ApiResponse.success(projectService.getMembers(user, id)));
     }
 
     @PostMapping("/{id}/members")
     public ResponseEntity<ApiResponse<Void>> addProjectMember(
             @AuthenticationPrincipal User user,
-            @PathVariable Long id,
-            @RequestParam Long userId) {
+            @PathVariable String id,             // Long → String
+            @RequestParam String userId) {       // Long → String
         projectService.addMember(user, id, userId);
         return ResponseEntity.ok(ApiResponse.success("Member added", null));
     }
@@ -87,8 +87,8 @@ public class ProjectController {
     @DeleteMapping("/{id}/members/{userId}")
     public ResponseEntity<ApiResponse<Void>> removeProjectMember(
             @AuthenticationPrincipal User user,
-            @PathVariable Long id,
-            @PathVariable Long userId) {
+            @PathVariable String id,             // Long → String
+            @PathVariable String userId) {       // Long → String
         projectService.removeMember(user, id, userId);
         return ResponseEntity.ok(ApiResponse.success("Member removed", null));
     }

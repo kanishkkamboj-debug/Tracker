@@ -4,26 +4,21 @@ import com.example.Tracker.entity.Project;
 import com.example.Tracker.entity.ProjectStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.Optional;
 
-public interface ProjectRepository extends JpaRepository<Project, Long> {
+public interface ProjectRepository extends MongoRepository<Project, String> {
 
     // Paginated list of projects for a specific owner
-    Page<Project> findByWorkspaceOwnerId(Long ownerId, Pageable pageable);
-
-    // Load project WITH workspace in one query (avoids N+1)
-    @EntityGraph(attributePaths = {"workspace"})
-    Optional<Project> findWithWorkspaceById(Long id);
+    Page<Project> findByOwnerId(String ownerId, Pageable pageable);
 
     // Count by owner
-    long countByWorkspaceOwnerId(Long ownerId);
+    long countByOwnerId(String ownerId);
 
     // Count by owner and status
-    long countByWorkspaceOwnerIdAndStatus(Long ownerId, ProjectStatus status);
+    long countByOwnerIdAndStatus(String ownerId, ProjectStatus status);
 
     // Check ownership
-    boolean existsByIdAndWorkspaceOwnerId(Long id, Long ownerId);
+    boolean existsByIdAndOwnerId(String id, String ownerId);
 }

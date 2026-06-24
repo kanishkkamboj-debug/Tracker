@@ -28,5 +28,5 @@ public class TaskRequest {
     private String assigneeName;
 
     @NotNull(message = "Project ID is required")
-    private Long projectId;
+    private String projectId;
 }

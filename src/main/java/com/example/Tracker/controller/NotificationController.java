@@ -19,23 +19,28 @@ public class NotificationController {
     private final NotificationService notificationService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<NotificationResponse>>> getAll(@AuthenticationPrincipal User user) {
+    public ResponseEntity<ApiResponse<List<NotificationResponse>>> getAll(
+            @AuthenticationPrincipal User user) {
         return ResponseEntity.ok(ApiResponse.success(notificationService.getAll(user)));
     }
 
     @GetMapping("/unread-count")
-    public ResponseEntity<ApiResponse<Long>> getUnreadCount(@AuthenticationPrincipal User user) {
+    public ResponseEntity<ApiResponse<Long>> getUnreadCount(
+            @AuthenticationPrincipal User user) {
         return ResponseEntity.ok(ApiResponse.success(notificationService.countUnread(user)));
     }
 
     @PatchMapping("/{id}/read")
-    public ResponseEntity<ApiResponse<Void>> markRead(@AuthenticationPrincipal User user, @PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> markRead(
+            @AuthenticationPrincipal User user,
+            @PathVariable String id) {           // Long → String
         notificationService.markRead(user, id);
         return ResponseEntity.ok(ApiResponse.success("Marked as read", null));
     }
 
     @PatchMapping("/read-all")
-    public ResponseEntity<ApiResponse<Void>> markAllRead(@AuthenticationPrincipal User user) {
+    public ResponseEntity<ApiResponse<Void>> markAllRead(
+            @AuthenticationPrincipal User user) {
         notificationService.markAllRead(user);
         return ResponseEntity.ok(ApiResponse.success("All marked as read", null));
     }

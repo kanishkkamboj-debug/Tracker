@@ -1,7 +1,9 @@
 package com.example.Tracker.entity;
 
-import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -10,55 +12,36 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
-@Entity
-@Table(name = "users", indexes = {
-    @Index(name = "idx_user_email", columnList = "email", unique = true)
-})
+@Document(collection = "users")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class User implements UserDetails {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false, unique = true, length = 150)
+    @Indexed(unique = true)
     private String email;
 
-    @Column(nullable = false)
     private String passwordHash;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
     @Builder.Default
     private UserRole role = UserRole.USER; // Extension point: full RBAC in v2
 
-    @Column(nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Column(length = 255)
     private String avatarUrl;
-
-    @Column(length = 100)
     private String jobTitle;
-
-    @Column(length = 1000)
     private String bio;
-
-    @Column(length = 100)
     private String location;
-
-    @Column(length = 255)
     private String githubUrl;
-
-    @Column(length = 255)
     private String linkedinUrl;
-
-    @Column(length = 255)
     private String twitterUrl;
+
+    /** Embedded user preferences — replaces the former user_settings table. */
+    private UserSettings settings;
 
     // ─── UserDetails impl ─────────────────────────────────────────────────────
 

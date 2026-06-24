@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SettingsResponse {
     // Profile
-    private Long userId;
+    private String userId;      // Long → String
     private String name;
     private String email;
     private String avatarUrl;
@@ -22,8 +22,7 @@ public class SettingsResponse {
     private String linkedinUrl;
     private String twitterUrl;
 
-    // Settings
-    private Long settingsId;
+    // Settings (settingsId removed — settings are now embedded inside User)
     private String theme;
     private String language;
     private String timezone;

@@ -14,13 +14,13 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProjectResponse {
-    private Long id;
+    private String id;          // Long → String
     private String name;
     private String description;
     private ProjectStatus status;
     private LocalDate startDate;
     private LocalDate endDate;
-    private Long ownerId;
+    private String ownerId;     // Long → String
     private String ownerName;
     private int taskCount;
     private String githubRepoUrl;

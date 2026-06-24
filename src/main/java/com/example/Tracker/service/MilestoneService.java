@@ -3,13 +3,11 @@ package com.example.Tracker.service;
 import com.example.Tracker.dto.MilestoneRequest;
 import com.example.Tracker.dto.MilestoneResponse;
 import com.example.Tracker.entity.Milestone;
-import com.example.Tracker.entity.Project;
 import com.example.Tracker.exception.ResourceNotFoundException;
 import com.example.Tracker.repository.MilestoneRepository;
 import com.example.Tracker.repository.ProjectRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,8 +19,7 @@ public class MilestoneService {
     private final MilestoneRepository milestoneRepository;
     private final ProjectRepository projectRepository;
 
-    @Transactional(readOnly = true)
-    public List<MilestoneResponse> getMilestonesByProject(Long projectId) {
+    public List<MilestoneResponse> getMilestonesByProject(String projectId) {
         if (!projectRepository.existsById(projectId)) {
             throw new ResourceNotFoundException("Project", projectId);
         }
@@ -30,33 +27,30 @@ public class MilestoneService {
                 .stream().map(this::toResponse).toList();
     }
 
-    @Transactional(readOnly = true)
-    public MilestoneResponse getMilestoneById(Long id) {
+    public MilestoneResponse getMilestoneById(String id) {
         Milestone milestone = milestoneRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Milestone", id));
         return toResponse(milestone);
     }
 
-    @Transactional
-    public MilestoneResponse createMilestone(Long projectId, MilestoneRequest request) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ResourceNotFoundException("Project", projectId));
+    public MilestoneResponse createMilestone(String projectId, MilestoneRequest request) {
+        if (!projectRepository.existsById(projectId)) {
+            throw new ResourceNotFoundException("Project", projectId);
+        }
 
         Milestone milestone = Milestone.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .dueDate(request.getDueDate())
                 .completed(request.isCompleted())
-                .project(project)
+                .projectId(projectId)
                 .build();
 
-        @SuppressWarnings("null")
         Milestone saved = milestoneRepository.save(milestone);
         return toResponse(saved);
     }
 
-    @Transactional
-    public MilestoneResponse updateMilestone(Long id, MilestoneRequest request) {
+    public MilestoneResponse updateMilestone(String id, MilestoneRequest request) {
         Milestone milestone = milestoneRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Milestone", id));
 
@@ -66,13 +60,11 @@ public class MilestoneService {
         milestone.setCompleted(request.isCompleted());
         milestone.setUpdatedAt(LocalDateTime.now());
 
-        @SuppressWarnings("null")
         Milestone saved = milestoneRepository.save(milestone);
         return toResponse(saved);
     }
 
-    @Transactional
-    public void deleteMilestone(Long id) {
+    public void deleteMilestone(String id) {
         Milestone milestone = milestoneRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Milestone", id));
         milestoneRepository.delete(milestone);
@@ -85,7 +77,7 @@ public class MilestoneService {
                 .description(milestone.getDescription())
                 .dueDate(milestone.getDueDate())
                 .completed(milestone.isCompleted())
-                .projectId(milestone.getProject().getId())
+                .projectId(milestone.getProjectId())
                 .createdAt(milestone.getCreatedAt())
                 .updatedAt(milestone.getUpdatedAt())
                 .build();

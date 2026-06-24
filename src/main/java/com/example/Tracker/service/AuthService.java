@@ -10,7 +10,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -21,7 +20,6 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
-    @Transactional
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("Email already in use: " + request.getEmail());
@@ -34,7 +32,6 @@ public class AuthService {
                 .build();
 
         user = userRepository.save(user);
-        @SuppressWarnings("null")
         String token = jwtService.generateToken(user);
 
         return AuthResponse.builder()
@@ -45,13 +42,11 @@ public class AuthService {
                 .build();
     }
 
-    @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
         Authentication auth = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
         User user = (User) auth.getPrincipal();
-        @SuppressWarnings("null")
         String token = jwtService.generateToken(user);
 
         return AuthResponse.builder()

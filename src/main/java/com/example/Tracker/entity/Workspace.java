@@ -1,47 +1,28 @@
 package com.example.Tracker.entity;
 
-import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
-@Entity
-@Table(name = "workspaces")
+@Document(collection = "workspaces")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Workspace {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @Column(nullable = false, length = 100)
     private String name;
-
     private String logo;
-
-    @Column(columnDefinition = "TEXT")
     private String description;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "owner_id", nullable = false)
-    private User owner;
+    /** Reference to the User who owns this workspace. */
+    private String ownerId;
 
-    @OneToMany(mappedBy = "workspace", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<Project> projects = new ArrayList<>();
-
-    @Column(nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Column(nullable = false)
     @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
-
-    @PreUpdate
-    public void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }

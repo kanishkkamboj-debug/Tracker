@@ -12,9 +12,9 @@ import com.example.Tracker.exception.ResourceNotFoundException;
 import com.example.Tracker.exception.UnauthorizedException;
 import com.example.Tracker.repository.ProjectRepository;
 import com.example.Tracker.repository.TaskRepository;
+import com.example.Tracker.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -24,13 +24,13 @@ public class TaskService {
 
     private final TaskRepository taskRepository;
     private final ProjectRepository projectRepository;
+    private final UserRepository userRepository;
 
-    @Transactional
     public TaskResponse createTask(User user, TaskRequest request) {
         Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new ResourceNotFoundException("Project", request.getProjectId()));
 
-        if (!project.getWorkspace().getOwner().getId().equals(user.getId())) {
+        if (!project.getOwnerId().equals(user.getId())) {
             throw new UnauthorizedException("You do not own this project");
         }
 
@@ -40,16 +40,15 @@ public class TaskService {
                 .priority(request.getPriority() != null ? request.getPriority() : TaskPriority.MEDIUM)
                 .status(request.getStatus() != null ? request.getStatus() : TaskStatus.TODO)
                 .dueDate(request.getDueDate())
-                .project(project)
+                .projectId(project.getId())
+                .ownerId(project.getOwnerId())   // denormalized for dashboard queries
                 .build();
 
-        @SuppressWarnings("null")
         Task savedTask = taskRepository.save(task);
-        return toResponse(savedTask);
+        return toResponse(savedTask, project.getName());
     }
 
-    @Transactional
-    public TaskResponse updateTask(User user, Long taskId, TaskRequest request) {
+    public TaskResponse updateTask(User user, String taskId, TaskRequest request) {
         Task task = getTaskAndVerifyOwner(user, taskId);
 
         task.setTitle(request.getTitle());
@@ -59,47 +58,51 @@ public class TaskService {
         task.setDueDate(request.getDueDate());
         task.setUpdatedAt(LocalDateTime.now());
 
-        @SuppressWarnings("null")
         Task savedTask = taskRepository.save(task);
-        return toResponse(savedTask);
+        return toResponse(savedTask, resolveProjectName(savedTask.getProjectId()));
     }
 
-    @Transactional
-    public TaskResponse updateTaskStatus(User user, Long taskId, TaskStatusUpdateRequest request) {
+    public TaskResponse updateTaskStatus(User user, String taskId, TaskStatusUpdateRequest request) {
         Task task = getTaskAndVerifyOwner(user, taskId);
         task.setStatus(request.getStatus());
         task.setUpdatedAt(LocalDateTime.now());
-        @SuppressWarnings("null")
         Task savedTask = taskRepository.save(task);
-        return toResponse(savedTask);
+        return toResponse(savedTask, resolveProjectName(savedTask.getProjectId()));
     }
 
-    @Transactional(readOnly = true)
-    public TaskResponse getTask(User user, Long taskId) {
+    public TaskResponse getTask(User user, String taskId) {
         Task task = getTaskAndVerifyOwner(user, taskId);
-        return toResponse(task);
+        return toResponse(task, resolveProjectName(task.getProjectId()));
     }
 
-    @Transactional
-    public void deleteTask(User user, Long taskId) {
+    public void deleteTask(User user, String taskId) {
         Task task = getTaskAndVerifyOwner(user, taskId);
         taskRepository.delete(task);
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
-    private Task getTaskAndVerifyOwner(User user, Long taskId) {
-        @SuppressWarnings("null")
+    private Task getTaskAndVerifyOwner(User user, String taskId) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", taskId));
 
-        if (!task.getProject().getWorkspace().getOwner().getId().equals(user.getId())) {
+        if (!task.getOwnerId().equals(user.getId())) {
             throw new UnauthorizedException("You do not own this task");
         }
         return task;
     }
 
-    public TaskResponse toResponse(Task task) {
+    private String resolveProjectName(String projectId) {
+        if (projectId == null) return null;
+        return projectRepository.findById(projectId).map(Project::getName).orElse(null);
+    }
+
+    public TaskResponse toResponse(Task task, String projectName) {
+        String assigneeName = null;
+        if (task.getAssigneeId() != null) {
+            assigneeName = userRepository.findById(task.getAssigneeId())
+                    .map(User::getName).orElse(null);
+        }
         return TaskResponse.builder()
                 .id(task.getId())
                 .title(task.getTitle())
@@ -107,9 +110,9 @@ public class TaskService {
                 .priority(task.getPriority())
                 .status(task.getStatus())
                 .dueDate(task.getDueDate())
-                .assigneeName(task.getAssignee() != null ? task.getAssignee().getName() : null)
-                .projectId(task.getProject().getId())
-                .projectName(task.getProject().getName())
+                .assigneeName(assigneeName)
+                .projectId(task.getProjectId())
+                .projectName(projectName)
                 .createdAt(task.getCreatedAt())
                 .updatedAt(task.getUpdatedAt())
                 .build();

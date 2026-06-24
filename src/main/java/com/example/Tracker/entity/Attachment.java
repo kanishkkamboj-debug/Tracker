@@ -1,34 +1,25 @@
 package com.example.Tracker.entity;
 
-import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "attachments")
+/**
+ * Embedded POJO — stored inside the Task document as 'attachments' list.
+ * No longer a separate MongoDB collection or JPA table.
+ */
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Attachment {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    /** Preserved MySQL id as string for client references. */
+    private String id;
 
-    @Column(nullable = false)
     private String fileName;
-
-    @Column(nullable = false)
     private String fileUrl;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "task_id", nullable = false)
-    private Task task;
+    /** Reference to the User who uploaded this file. */
+    private String uploadedById;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "uploaded_by", nullable = false)
-    private User uploadedBy;
-
-    @Column(nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime uploadedAt = LocalDateTime.now();
 }

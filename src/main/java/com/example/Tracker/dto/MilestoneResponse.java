@@ -9,12 +9,12 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 public class MilestoneResponse {
-    private Long id;
+    private String id;          // Long → String
     private String title;
     private String description;
     private LocalDate dueDate;
     private boolean completed;
-    private Long projectId;
+    private String projectId;   // Long → String
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

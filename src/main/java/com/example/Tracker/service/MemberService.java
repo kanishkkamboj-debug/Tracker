@@ -3,13 +3,11 @@ package com.example.Tracker.service;
 import com.example.Tracker.dto.MemberResponse;
 import com.example.Tracker.entity.TaskStatus;
 import com.example.Tracker.entity.User;
-import com.example.Tracker.repository.ProjectMemberRepository;
 import com.example.Tracker.repository.ProjectRepository;
 import com.example.Tracker.repository.TaskRepository;
 import com.example.Tracker.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -22,9 +20,7 @@ public class MemberService {
     private final UserRepository userRepository;
     private final TaskRepository taskRepository;
     private final ProjectRepository projectRepository;
-    private final ProjectMemberRepository projectMemberRepository;
 
-    @Transactional(readOnly = true)
     public List<MemberResponse> getAllMembers(User currentUser) {
         List<User> users = userRepository.findAll();
         List<MemberResponse> results = new ArrayList<>();
@@ -32,8 +28,13 @@ public class MemberService {
 
         for (User u : users) {
             long totalTasks = taskRepository.countByAssigneeId(u.getId());
-            long doneTasks = taskRepository.countByAssigneeIdAndStatus(u.getId(), TaskStatus.DONE);
-            long projects = projectMemberRepository.findByUserId(u.getId()).size();
+            long doneTasks  = taskRepository.countByAssigneeIdAndStatus(u.getId(), TaskStatus.DONE);
+
+            // Count projects where this user appears in the embedded members list
+            long projects = projectRepository.findAll().stream()
+                    .filter(p -> p.getMembers().stream()
+                            .anyMatch(pm -> pm.getUserId().equals(u.getId())))
+                    .count();
 
             results.add(MemberResponse.builder()
                     .id(u.getId())

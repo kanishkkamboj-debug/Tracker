@@ -1,68 +1,49 @@
 package com.example.Tracker.entity;
 
-import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Entity
-@Table(name = "projects", indexes = {
-    @Index(name = "idx_project_workspace", columnList = "workspace_id"),
-    @Index(name = "idx_project_status", columnList = "status")
-})
+@Document(collection = "projects")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Project {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @Column(nullable = false, length = 200)
     private String name;
-
-    @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
     @Builder.Default
     private ProjectStatus status = ProjectStatus.ACTIVE;
 
     private LocalDate startDate;
     private LocalDate endDate;
-
-    @Column(length = 1000)
     private String githubRepoUrl;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "workspace_id", nullable = false)
-    private Workspace workspace;
+    /** Reference to the parent Workspace. */
+    private String workspaceId;
 
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    /**
+     * Denormalized from workspace.ownerId for efficient dashboard queries
+     * (avoids a cross-collection join on every count/filter).
+     */
+    @Indexed
+    private String ownerId;
+
+    /** Embedded project members — replaces the former project_members table. */
     @Builder.Default
     private List<ProjectMember> members = new ArrayList<>();
 
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<Sprint> sprints = new ArrayList<>();
-
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<Task> tasks = new ArrayList<>();
-
-    @Column(nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Column(nullable = false)
     @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
-
-    @PreUpdate
-    public void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }

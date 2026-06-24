@@ -1,34 +1,29 @@
 package com.example.Tracker.entity;
 
-import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "notifications")
+@Document(collection = "notifications")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Notification {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @Column(nullable = false)
     private String title;
-
-    @Column(columnDefinition = "TEXT", nullable = false)
     private String message;
 
-    @Column(nullable = false)
     @Builder.Default
     private boolean readStatus = false;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    /** Reference to the recipient User. */
+    @Indexed
+    private String userId;
 
-    @Column(nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 }

@@ -1,48 +1,34 @@
 package com.example.Tracker.entity;
 
-import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "milestones", indexes = {
-    @Index(name = "idx_milestone_project", columnList = "project_id")
-})
+@Document(collection = "milestones")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Milestone {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @Column(nullable = false, length = 200)
     private String title;
-
-    @Column(columnDefinition = "TEXT")
     private String description;
-
     private LocalDate dueDate;
 
-    @Column(nullable = false)
     @Builder.Default
     private boolean completed = false;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "project_id", nullable = false)
-    private Project project;
+    /** Reference to the parent Project. */
+    @Indexed
+    private String projectId;
 
-    @Column(nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Column(nullable = false)
     @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
-
-    @PreUpdate
-    public void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }

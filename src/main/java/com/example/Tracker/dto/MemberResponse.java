@@ -7,7 +7,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MemberResponse {
-    private Long id;
+    private String id;          // Long → String
     private String name;
     private String email;
     private int taskCount;

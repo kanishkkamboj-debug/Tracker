@@ -1,35 +1,33 @@
 package com.example.Tracker.entity;
 
-import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "activity_logs")
+@Document(collection = "activity_logs")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class ActivityLog {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @Column(nullable = false)
     private String action;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    /** Reference to the User who performed the action. */
+    @Indexed
+    private String userId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "project_id")
-    private Project project;
+    /** Reference to the related Project (nullable). */
+    @Indexed
+    private String projectId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "task_id")
-    private Task task;
+    /** Reference to the related Task (nullable). */
+    @Indexed
+    private String taskId;
 
-    @Column(nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime timestamp = LocalDateTime.now();
 }

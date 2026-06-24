@@ -59,7 +59,8 @@ export default function KanbanCard({ task, onDelete, onMove }: KanbanCardProps) 
       style={style}
       className={`touch-none pb-3 ${isDragging ? 'z-50 opacity-40' : ''}`}
     >
-      <div className="p-4 cursor-grab active:cursor-grabbing bg-bg border border-border rounded-lg hover:border-text-muted/40 transition-colors flex flex-col gap-3 shadow-sm group relative">
+      <div className="p-4 cursor-grab active:cursor-grabbing bg-surface/30 backdrop-blur-md border border-border/50 rounded-xl hover:border-accent/50 hover:shadow-[0_0_20px_rgba(165,192,243,0.15)] transition-all duration-300 flex flex-col gap-3 shadow-lg group relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
         {/* Top Row */}
         <div className="flex justify-between items-center" {...attributes} {...listeners}>

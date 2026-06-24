@@ -29,14 +29,14 @@ public class TaskController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<TaskResponse>> getTask(
             @AuthenticationPrincipal User user,
-            @PathVariable Long id) {
+            @PathVariable String id) {           // Long → String
         return ResponseEntity.ok(ApiResponse.success(taskService.getTask(user, id)));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<TaskResponse>> updateTask(
             @AuthenticationPrincipal User user,
-            @PathVariable Long id,
+            @PathVariable String id,             // Long → String
             @Valid @RequestBody TaskRequest request) {
         return ResponseEntity.ok(ApiResponse.success("Task updated",
                 taskService.updateTask(user, id, request)));
@@ -45,7 +45,7 @@ public class TaskController {
     @PatchMapping("/{id}/status")
     public ResponseEntity<ApiResponse<TaskResponse>> updateTaskStatus(
             @AuthenticationPrincipal User user,
-            @PathVariable Long id,
+            @PathVariable String id,             // Long → String
             @Valid @RequestBody TaskStatusUpdateRequest request) {
         return ResponseEntity.ok(ApiResponse.success("Status updated",
                 taskService.updateTaskStatus(user, id, request)));
@@ -54,7 +54,7 @@ public class TaskController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteTask(
             @AuthenticationPrincipal User user,
-            @PathVariable Long id) {
+            @PathVariable String id) {           // Long → String
         taskService.deleteTask(user, id);
         return ResponseEntity.ok(ApiResponse.success("Task deleted", null));
     }

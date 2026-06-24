@@ -3,19 +3,23 @@ package com.example.Tracker.service;
 import com.example.Tracker.dto.DashboardSummaryResponse;
 import com.example.Tracker.dto.TaskResponse;
 import com.example.Tracker.entity.ProjectStatus;
-import com.example.Tracker.entity.Task;
 import com.example.Tracker.entity.TaskPriority;
 import com.example.Tracker.entity.TaskStatus;
 import com.example.Tracker.entity.User;
 import com.example.Tracker.repository.ProjectRepository;
 import com.example.Tracker.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 
 @Service
 @RequiredArgsConstructor
@@ -23,72 +27,59 @@ public class DashboardService {
 
     private final ProjectRepository projectRepository;
     private final TaskRepository taskRepository;
+    private final MongoTemplate mongoTemplate;
 
-    @Transactional(readOnly = true)
-    public DashboardSummaryResponse getSummary(User user, Long projectId) {
-        Long ownerId = user.getId();
+    public DashboardSummaryResponse getSummary(User user, String projectId) {
+        String ownerId = user.getId();
 
         long totalProjects, activeProjects, completedProjects, onHoldProjects;
         long totalTasks, completedTasks, pendingTasks;
-        List<Object[]> statusCounts, priorityCounts;
-        List<Task> topTasks;
+        Map<String, Long> tasksByStatus;
+        Map<String, Long> tasksByPriority;
+        List<TaskResponse> recentTasks;
 
         if (projectId != null) {
             // Verify ownership
-            if (!projectRepository.existsByIdAndWorkspaceOwnerId(projectId, ownerId)) {
+            if (!projectRepository.existsByIdAndOwnerId(projectId, ownerId)) {
                 throw new RuntimeException("Project not found or not owned by user");
             }
-            
-            // Project counts don't make sense for a single project, so return 0 or 1
+
             totalProjects = 1;
             activeProjects = 0; completedProjects = 0; onHoldProjects = 0;
-            // Or ideally we fetch the project to see its status, but 0 is fine for chart filters
 
-            totalTasks = taskRepository.countByProjectId(projectId);
+            totalTasks    = taskRepository.countByProjectId(projectId);
             completedTasks = taskRepository.countByProjectIdAndStatus(projectId, TaskStatus.DONE);
-            pendingTasks = totalTasks - completedTasks;
+            pendingTasks  = totalTasks - completedTasks;
 
-            statusCounts = taskRepository.countByStatusForProject(projectId);
-            priorityCounts = taskRepository.countByPriorityForProject(projectId);
-            topTasks = taskRepository.findTop5ByProjectIdOrderByUpdatedAtDesc(projectId);
+            tasksByStatus   = aggregateByField("tasks", "projectId", projectId, "status");
+            tasksByPriority = aggregateByField("tasks", "projectId", projectId, "priority");
+            recentTasks = taskRepository.findTop5ByProjectIdOrderByUpdatedAtDesc(projectId)
+                    .stream().map(t -> toTaskResponse(t, null)).toList();
+
         } else {
-            // Global Workspace stats
-            totalProjects  = projectRepository.countByWorkspaceOwnerId(ownerId);
-            activeProjects = projectRepository.countByWorkspaceOwnerIdAndStatus(ownerId, ProjectStatus.ACTIVE);
-            completedProjects = projectRepository.countByWorkspaceOwnerIdAndStatus(ownerId, ProjectStatus.COMPLETED);
-            onHoldProjects = projectRepository.countByWorkspaceOwnerIdAndStatus(ownerId, ProjectStatus.ON_HOLD);
+            // Global workspace stats
+            totalProjects    = projectRepository.countByOwnerId(ownerId);
+            activeProjects   = projectRepository.countByOwnerIdAndStatus(ownerId, ProjectStatus.ACTIVE);
+            completedProjects = projectRepository.countByOwnerIdAndStatus(ownerId, ProjectStatus.COMPLETED);
+            onHoldProjects   = projectRepository.countByOwnerIdAndStatus(ownerId, ProjectStatus.ON_HOLD);
 
-            totalTasks     = taskRepository.countByProjectWorkspaceOwnerId(ownerId);
-            completedTasks = taskRepository.countByProjectWorkspaceOwnerIdAndStatus(ownerId, TaskStatus.DONE);
-            pendingTasks   = totalTasks - completedTasks;
+            totalTasks    = taskRepository.countByOwnerId(ownerId);
+            completedTasks = taskRepository.countByOwnerIdAndStatus(ownerId, TaskStatus.DONE);
+            pendingTasks  = totalTasks - completedTasks;
 
-            statusCounts = taskRepository.countByStatusForOwner(ownerId);
-            priorityCounts = taskRepository.countByPriorityForOwner(ownerId);
-            topTasks = taskRepository.findTop5ByProjectWorkspaceOwnerIdOrderByUpdatedAtDesc(ownerId);
+            tasksByStatus   = aggregateByField("tasks", "ownerId", ownerId, "status");
+            tasksByPriority = aggregateByField("tasks", "ownerId", ownerId, "priority");
+            recentTasks = taskRepository.findTop5ByOwnerIdOrderByUpdatedAtDesc(ownerId)
+                    .stream().map(t -> toTaskResponse(t, null)).toList();
         }
 
-        // Tasks by status (for chart)
-        Map<String, Long> tasksByStatus = new LinkedHashMap<>();
-        for (Object[] row : statusCounts) {
-            tasksByStatus.put(((TaskStatus) row[0]).name(), (Long) row[1]);
-        }
+        // Ensure all enum values appear in maps (even if count = 0)
         for (TaskStatus s : TaskStatus.values()) {
             tasksByStatus.putIfAbsent(s.name(), 0L);
-        }
-
-        // Tasks by priority (for chart)
-        Map<String, Long> tasksByPriority = new LinkedHashMap<>();
-        for (Object[] row : priorityCounts) {
-            tasksByPriority.put(((TaskPriority) row[0]).name(), (Long) row[1]);
         }
         for (TaskPriority p : TaskPriority.values()) {
             tasksByPriority.putIfAbsent(p.name(), 0L);
         }
-
-        // Recent tasks
-        List<TaskResponse> recentTasks = topTasks.stream()
-                .map(this::taskToResponse)
-                .toList();
 
         return DashboardSummaryResponse.builder()
                 .totalProjects(totalProjects)
@@ -104,7 +95,32 @@ public class DashboardService {
                 .build();
     }
 
-    private TaskResponse taskToResponse(Task task) {
+    /**
+     * MongoDB aggregation equivalent of:
+     *   SELECT <groupField>, COUNT(*) FROM tasks WHERE <filterField> = <filterValue> GROUP BY <groupField>
+     */
+    private Map<String, Long> aggregateByField(String collection,
+                                                String filterField, String filterValue,
+                                                String groupField) {
+        Aggregation agg = newAggregation(
+                match(Criteria.where(filterField).is(filterValue)),
+                group(groupField).count().as("count"),
+                project("count").and("_id").as("label")
+        );
+
+        AggregationResults<org.bson.Document> results =
+                mongoTemplate.aggregate(agg, collection, org.bson.Document.class);
+
+        Map<String, Long> map = new LinkedHashMap<>();
+        for (org.bson.Document doc : results.getMappedResults()) {
+            String label = String.valueOf(doc.get("label"));
+            long count = ((Number) doc.get("count")).longValue();
+            map.put(label, count);
+        }
+        return map;
+    }
+
+    private TaskResponse toTaskResponse(com.example.Tracker.entity.Task task, String projectName) {
         return TaskResponse.builder()
                 .id(task.getId())
                 .title(task.getTitle())
@@ -112,9 +128,8 @@ public class DashboardService {
                 .priority(task.getPriority())
                 .status(task.getStatus())
                 .dueDate(task.getDueDate())
-                .assigneeName(task.getAssignee() != null ? task.getAssignee().getName() : null)
-                .projectId(task.getProject().getId())
-                .projectName(task.getProject().getName())
+                .projectId(task.getProjectId())
+                .projectName(projectName)
                 .createdAt(task.getCreatedAt())
                 .updatedAt(task.getUpdatedAt())
                 .build();

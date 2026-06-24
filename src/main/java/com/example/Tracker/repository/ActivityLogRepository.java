@@ -1,10 +1,11 @@
 package com.example.Tracker.repository;
 
 import com.example.Tracker.entity.ActivityLog;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
+
 import java.util.List;
 
-public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> {
-    List<ActivityLog> findByProjectIdOrderByTimestampDesc(Long projectId);
-    List<ActivityLog> findByTaskIdOrderByTimestampDesc(Long taskId);
+public interface ActivityLogRepository extends MongoRepository<ActivityLog, String> {
+    List<ActivityLog> findByProjectIdOrderByTimestampDesc(String projectId);
+    List<ActivityLog> findByTaskIdOrderByTimestampDesc(String taskId);
 }

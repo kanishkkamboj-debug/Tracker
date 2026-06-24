@@ -15,14 +15,14 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TaskResponse {
-    private Long id;
+    private String id;           // Long → String
     private String title;
     private String description;
     private TaskPriority priority;
     private TaskStatus status;
     private LocalDate dueDate;
     private String assigneeName;
-    private Long projectId;
+    private String projectId;    // Long → String
     private String projectName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

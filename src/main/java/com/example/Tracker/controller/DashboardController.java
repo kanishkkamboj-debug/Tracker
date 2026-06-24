@@ -22,7 +22,7 @@ public class DashboardController {
     @GetMapping("/summary")
     public ResponseEntity<ApiResponse<DashboardSummaryResponse>> getSummary(
             @AuthenticationPrincipal User user,
-            @RequestParam(required = false) Long projectId) {
+            @RequestParam(required = false) String projectId) {
         return ResponseEntity.ok(ApiResponse.success(dashboardService.getSummary(user, projectId)));
     }
 }
